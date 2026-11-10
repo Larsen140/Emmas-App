@@ -31,6 +31,7 @@
 }
 :root[data-dark]{--shadow:0 1px 0 rgba(255,255,255,.05) inset,0 12px 30px -12px rgba(0,0,0,.6);--good:#7cc08a;--bad:#ec7b72;--warn:#e9b45a;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;transition:background .4s}
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:var(--pat-img);background-size:var(--pat-size) var(--pat-size);opacity:var(--pat-op)}
@@ -209,6 +210,20 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 .small{font-size:13px}
 .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .right{margin-left:auto}
+.install{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 24px) 22px calc(env(safe-area-inset-bottom) + 24px);overflow:auto}
+.install::before{content:"";position:absolute;inset:0;background-image:var(--pat-img);background-size:var(--pat-size) var(--pat-size);opacity:var(--pat-op);pointer-events:none}
+.install-card{position:relative;width:min(440px,100%);text-align:center;display:flex;flex-direction:column;gap:16px;align-items:center}
+.install-card .logo{width:84px;height:84px;border-radius:22px}.install-card .logo span{font-size:54px}
+.install-card h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:28px;letter-spacing:-.01em}
+.install-card>p{margin:0;color:var(--muted);font-size:16px}
+.steps{width:100%;text-align:left;display:flex;flex-direction:column;gap:0;border-radius:22px;overflow:hidden}
+.step{display:flex;gap:14px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);font-size:16px}
+.step:last-child{border-bottom:0}
+.step .n{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:15px}
+.step b{font-weight:800}
+.step svg{width:22px;height:22px;vertical-align:-5px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.install .arrow{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 6px);transform:translateX(-50%);font-size:30px;color:var(--accent);animation:bob 1.2s ease-in-out infinite}
+@keyframes bob{50%{transform:translate(-50%,8px)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -225,8 +240,8 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.4';
-const BUILD='2026-11-10-2105'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='1.5';
+const BUILD='2026-11-10-2115'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -243,6 +258,9 @@ const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',he
 const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.5',d:'10.11.2026',t:'Schneller suchen',items:[
+    ['Besser','Neue Produkte werden schneller gesucht: Nur das Neue wird gesucht, und die App schaut alle paar Sekunden nach.'],
+    ['Neu','Die App läuft nur noch vom Home-Bildschirm aus.']]},
   {v:'1.4',d:'10.11.2026',t:'Neuer Kopfbereich',items:[
     ['Besser','Klarer, scharfer Kopf mit Logo, Begrüßung und Kalenderblatt für heute.'],
     ['Neu','Tipp aufs Kalenderblatt öffnet die Termine. Der Punkt daran zeigt, ob die Angebote verbunden sind.']]},
@@ -389,8 +407,11 @@ async function editMerkliste(fn,msg){
 }
 let pollT;
 function startPolling(){
-  searching=Date.now();clearInterval(pollT);
-  pollT=setInterval(()=>{if(!searching||Date.now()-searching>8*60e3){if(searching){searching=null;toast('Suche dauert länger – schau später nochmal rein');render()}clearInterval(pollT);return}loadRemote(true)},15e3);
+  searching=Date.now();
+  const tick=()=>{if(!searching)return;const age=Date.now()-searching;
+    if(age>8*60e3){searching=null;toast('Suche dauert länger – schau später nochmal rein');render();return}
+    loadRemote(true).finally(()=>{pollT=setTimeout(tick,age<3*60e3?4e3:15e3)})};
+  clearTimeout(pollT);pollT=setTimeout(tick,8e3);
   render();
 }
 async function addWatch(name){
@@ -408,7 +429,7 @@ function queueWatch(name){
   watchQueue.add(name.trim());clearTimeout(watchT);
   watchT=setTimeout(async()=>{const names=[...watchQueue];watchQueue.clear();
     const ok=await editMerkliste(d=>{d.produkte=d.produkte||[];for(const nm of names)if(!d.produkte.some(p=>norm(p.name||p)===norm(nm)))d.produkte.push({name:nm})},`Merkliste: ${names.join(', ')} hinzugefügt`);
-    if(ok){toast(names.length===1?`Suche Preise für „${names[0]}“…`:`Suche Preise für ${names.length} Produkte…`);startPolling()}},2500);
+    if(ok){toast(names.length===1?`Suche Preise für „${names[0]}“…`:`Suche Preise für ${names.length} Produkte…`);startPolling()}},900);
 }
 async function removeWatch(name){
   const ok=await editMerkliste(d=>{d.produkte=(d.produkte||[]).filter(p=>norm(p.name||p)!==norm(name))},`Merkliste: ${name} entfernt`);
@@ -837,9 +858,35 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 let lastLoad=0;
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){header();if(GH.on&&Date.now()-lastLoad>5*60e3){lastLoad=Date.now();loadRemote(true)}}});
 
+/* ---------- Nur vom Home-Bildschirm ---------- */
+const STANDALONE=navigator.standalone===true||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches;
+const UA=navigator.userAgent,IPAD=/iPad/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),IOS=IPAD||/iPhone|iPod/.test(UA),ANDROID=/Android/.test(UA);
+const MUST_INSTALL=!STANDALONE&&(IOS||ANDROID)&&location.protocol==='https:';
+let installEvt=null;addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;const b=document.getElementById('instBtn');if(b)b.hidden=false});
+function showInstall(){
+  const share='<svg viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+  const plus='<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+  const notSafari=IOS&&/CriOS|FxiOS|EdgiOS|OPiOS/.test(UA);
+  const steps=IOS?[
+    `Tippe auf ${share} <b>Teilen</b> ${IPAD?'oben rechts':'unten in der Leiste'}${notSafari?' (oder öffne den Link in Safari)':''}`,
+    `Scrolle nach unten und tippe auf ${plus} <b>Zum Home-Bildschirm</b>`,
+    `Tippe oben rechts auf <b>Hinzufügen</b>`,
+    `Öffne <b>Emmas Planner</b> auf deinem Home-Bildschirm`]
+   :[`Tippe oben rechts auf <b>⋮</b> (Menü)`,`Tippe auf <b>App installieren</b> oder <b>Zum Startbildschirm hinzufügen</b>`,`Öffne <b>Emmas Planner</b> auf deinem Startbildschirm`];
+  const d=document.createElement('div');d.className='install';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+  d.innerHTML=`<div class="install-card"><div class="logo"><span>E</span></div><h2>Emmas Planner</h2>
+    <p>Füge die App zu deinem Home-Bildschirm hinzu. Erst dann funktioniert sie richtig: im Vollbild, mit Speicher und schnellen Updates.</p>
+    <div class="steps card">${steps.map((t,i)=>`<div class="step"><span class="n">${i+1}</span><span>${t}</span></div>`).join('')}</div>
+    <button class="btn" id="instBtn" ${installEvt?'':'hidden'}>App installieren</button></div>
+    ${IOS&&!IPAD&&!notSafari?'<div class="arrow" aria-hidden="true">↓</div>':''}`;
+  document.body.appendChild(d);
+  d.querySelector('#instBtn').onclick=async()=>{if(installEvt){installEvt.prompt();installEvt=null}};
+}
+
 /* ---------- Start ---------- */
 applyTheme();render();
-if(GH.on){setSync('laden');lastLoad=Date.now();loadRemote(true)}
+if(MUST_INSTALL)showInstall();
+if(GH.on&&!MUST_INSTALL){setSync('laden');lastLoad=Date.now();loadRemote(true)}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 /* Schnelle Updates: beim Öffnen, beim Zurückkehren und alle 2 Minuten nach einer neuen Version schauen */
 let updT=0,updReady=false;
