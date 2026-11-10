@@ -289,7 +289,7 @@ const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
-S=Object.assign({},DEF,S);S.settings=Object.assign({},DEF.settings,S.settings||{});
+S=Object.assign({},DEF,S);S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
 let saveT;
 function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
@@ -338,7 +338,7 @@ const GH={
   get on(){return !!S.settings.token},
   async req(path,opt={}){
     const r=await fetch(`https://api.github.com/repos/${S.settings.repo}${path}`,{...opt,cache:'no-store',headers:{'Authorization':'Bearer '+S.settings.token.trim(),'Accept':opt.raw?'application/vnd.github.raw+json':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(opt.body?{'Content-Type':'application/json'}:{})}});
-    if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e}
+    if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;e.write=opt.method==='PUT';throw e}
     return opt.raw?r.text():r.json();
   },
   async readJson(file){const r=await this.req(`/contents/${file}?t=${Date.now()}`);const bin=atob(r.content.replace(/\n/g,''));const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));return {data:JSON.parse(new TextDecoder().decode(bytes)),sha:r.sha}},
@@ -347,7 +347,13 @@ const GH={
 let syncState='';// '', 'ok', 'laden', 'fehler'
 let searching=null;// Zeitpunkt, seit dem auf neue Angebote gewartet wird
 function setSync(st,txt){syncState=st;const el=document.getElementById('sync');if(!GH.on){el.hidden=true;return}el.hidden=false;el.className='sync'+(st==='ok'?' on':st==='fehler'?' err':'');el.querySelector('span').textContent=txt||({ok:'Verbunden',laden:'Lädt…',fehler:'Offline'}[st]||'')}
-function ghError(e){if(e.status===401)return 'Der Token ist ungültig oder abgelaufen.';if(e.status===404||e.status===403)return 'Kein Zugriff auf das Daten-Repo. Stimmen Token und Repo?';return 'Keine Verbindung. Bist du online?'}
+function ghError(e){
+  if(e.status===401)return 'Der Zugangscode ist ungültig oder abgelaufen. Bitte neu kopieren (Fehler 401).';
+  if(e.step==='repo'&&(e.status===404||e.status===403))return 'Der Zugangscode sieht das Repo „emmas-app-daten“ nicht. Beim Token unter „Repository access“ → „Only select repositories“ → emmas-app-daten wählen (Fehler '+e.status+').';
+  if(e.write&&(e.status===403||e.status===404))return 'Der Zugangscode darf nichts speichern. Beim Token „Contents“ auf „Read and write“ stellen (Fehler '+e.status+').';
+  if(e.status===403||e.status===404)return 'Der Zugangscode darf die Dateien nicht lesen. Beim Token unter „Permissions“ „Contents: Read and write“ hinzufügen (Fehler '+e.status+').';
+  return 'Keine Verbindung. Bist du online?'+(e.status?' (Fehler '+e.status+')':'');
+}
 async function loadRemote(quiet){
   if(!GH.on)return;
   setSync('laden');
@@ -450,7 +456,8 @@ let calMonth=new Date();calMonth.setDate(1);
 let calSel=todayIso();
 let suggQ='';
 const $=s=>document.querySelector(s);
-function toast(msg){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
+function showError(msg){toast(msg,7000);const c=document.getElementById('connErr');if(c){c.textContent=msg;c.hidden=false}}
+function toast(msg,ms){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms||2800)}
 function renderTabs(){
   const unseen=S.seen!==VERSION;
   $('#tabs').innerHTML=TABS.map(([k,l,i])=>`<button class="tab" role="tab" aria-selected="${tab===k}" data-tab="${k}">${ic(i)}<span>${l}</span>${k==='updates'&&unseen?'<i class="badge">1</i>':''}</button>`).join('');
@@ -707,7 +714,7 @@ function vSettings(){
       <div class="flex"><button class="btn ghost sm" data-act="reload">${ic('refresh')}Testen</button><button class="btn danger sm" data-act="disconnect">Trennen</button></div>`
     :`<p class="note">Gib hier einmal den Zugangscode (Token) ein, den du von Larsen bekommen hast. Danach werden deine Angebote jeden Montag automatisch aktualisiert.</p>
       <div class="field"><label for="tokenIn">Zugangscode</label><input id="tokenIn" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></div>
-      <details><summary class="muted small" style="cursor:pointer;font-weight:700">Erweitert</summary><div class="field" style="margin-top:8px"><label for="repoIn">Daten-Repo</label><input id="repoIn" value="${esc(st.repo)}" autocapitalize="off" spellcheck="false"></div></details>
+      <p class="note" id="connErr" hidden style="color:var(--bad);font-weight:700"></p>
       <button class="btn" data-act="connect">${ic('link')}Verbinden</button>`}
   </div>
   <div class="card pad sec"><h3>Daten</h3><p class="note">Liste, Termine und To-dos sind auf diesem Gerät gespeichert. Sichere sie ab und zu.</p>
@@ -783,11 +790,13 @@ document.addEventListener('click',async e=>{
     case'set-pattern':S.settings.pattern=b.dataset.v;save();applyTheme();render();break;
     case'toggle-laden':{const k=b.dataset.v,l=S.settings.laeden;if(l.includes(k)){if(l.length===1){toast('Mindestens ein Laden');break}S.settings.laeden=l.filter(x=>x!==k)}else S.settings.laeden=Object.keys(LAEDEN).filter(x=>x===k||l.includes(x));
       if(!S.settings.laeden.includes(S.settings.einkaufLaden))S.settings.einkaufLaden='alle';if(!S.settings.laeden.includes(S.settings.angLaden))S.settings.angLaden='alle';save();render();break}
-    case'connect':{const tk=val('tokenIn').trim(),repo=(val('repoIn')||DEFAULT_REPO).trim();if(!tk){toast('Bitte den Zugangscode eingeben');break}
+    case'connect':{const tk=val('tokenIn').replace(/\s+/g,''),repo=DEFAULT_REPO;if(!tk){toast('Bitte den Zugangscode eingeben');break}
       b.disabled=true;b.innerHTML='<span class="spin"></span>Verbinde…';
       const old={...S.settings};S.settings.token=tk;S.settings.repo=repo;
-      try{await GH.readJson('merkliste.json');save();toast('Verbunden ✿');await loadRemote(true);render()}
-      catch(err){S.settings.token=old.token;S.settings.repo=old.repo;toast(ghError(err));render()}
+      try{
+        try{await GH.req('')}catch(e1){e1.step='repo';throw e1}
+        await GH.readJson('merkliste.json');save();toast('Verbunden ✿');await loadRemote(true);render()}
+      catch(err){S.settings.token=old.token;S.settings.repo=old.repo;render();showError(ghError(err))}
       break}
     case'disconnect':if(confirmTwice(b,'Wirklich trennen?')){S.settings.token='';S.merkliste=null;S.angebote=null;save();setSync('');render();toast('Getrennt')}break;
     case'export':{const data=JSON.stringify({...S,settings:{...S.settings,token:''}},null,1);const blob=new Blob([data],{type:'application/json'});const u=URL.createObjectURL(blob);const l=document.createElement('a');l.href=u;l.download='emmas-planner-'+todayIso()+'.json';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);break}
