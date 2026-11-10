@@ -222,7 +222,7 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.1';
+const VERSION='1.2';
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -239,6 +239,11 @@ const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',he
 const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.2',d:'10.11.2026',t:'Preise kommen von selbst',items:[
+    ['Neu','Du musst keine Preise mehr eintippen: Die App sucht sie und wählt das passende Produkt selbst aus.'],
+    ['Neu','Angebote mit Statt-Preis, Normalpreise von dm und REWE, für die übrigen Läden ein ungefährer Preis („ca.“).'],
+    ['Neu','Neue Produkte zeigen „sucht…“, bis die Preise da sind (1–2 Minuten).'],
+    ['Neu','Beim Artikel kannst du ein anderes Produkt des Ladens mit „Nehmen“ wählen.']]},
   {v:'1.1',d:'10.11.2026',t:'Preise sofort',items:[
     ['Neu','Neue Produkte auf der Einkaufsliste werden sofort gesucht. Nach 1–2 Minuten sind Angebote und Preise da.'],
     ['Neu','Normalpreise von dm automatisch. Bei den anderen Läden merkt sich die App die Preise, die du einträgst.'],
@@ -406,12 +411,34 @@ function matchOffers(name,laden){
   return [...validOffers(),...normalPrices()].filter(o=>{if(laden&&o.laden!==laden)return false;const pn=norm(o.produkt),tn=norm(o.titel);
     return pn===n||tn===n||(pn&&(n.includes(pn)||pn.includes(n)))||tn.includes(n)}).sort((a,b)=>a.preis-b.preis);
 }
+function entryFor(it){const k=norm(it.produkt||it.name);return (S.angebote?.produkte||[]).find(p=>norm(p.name)===k)||null}
+function pending(it){return GH.on&&S.settings.autoSuche&&!entryFor(it)}
+// Alle passenden Preise beim gewählten Laden, die besten zuerst
+function candidates(it){
+  const e=entryFor(it);if(!e||!it.laden)return [];const t=todayIso();
+  const offs=(e.angebote||[]).filter(o=>o.laden===it.laden&&(!o.bis||o.bis>=t)).map(o=>({...o,produkt:e.name}));
+  const nps=(e.normalpreise||[]).filter(o=>o.laden===it.laden).map(o=>({...o,produkt:e.name,normal:true}));
+  const q=norm(it.produkt||it.name).split(' ').pop();
+  const head=o=>{const w=norm(o.titel).split(' ').filter(x=>!/^[0-9]+$|^[0-9]*(g|kg|ml|l|st|stk|x)$/.test(x));return w[w.length-1]===q?0:1};
+  const sc=o=>(o.rang??1)*2+head(o);
+  return [...offs,...nps].sort((a,b)=>sc(a)-sc(b)||a.preis-b.preis);
+}
 function effPrice(it){
-  const t=todayIso();
-  const manual=it.angebotPreis!=null&&(!it.angebotBis||it.angebotBis>=t)?{preis:it.angebotPreis,bis:it.angebotBis,quelle:'eigen'}:null;
-  const deal=manual,normal=it.preis;
-  if(deal&&(normal==null||deal.preis<=normal))return {preis:deal.preis,normal,deal};
-  return {preis:normal,normal,deal:null};
+  const t=todayIso(),e=entryFor(it),w=it.wahl;
+  const ty=e&&e.typisch,drog=['dm','rossmann'].includes(it.laden);
+  const typ=ty?(ty.preis??((drog?ty.drogerie:ty.lebensmittel)||ty.lebensmittel||ty.drogerie||{}).preis??null):null;
+  if(w&&w.laden===it.laden&&(w.normal||!w.bis||w.bis>=t)){
+    if(w.normal)return {preis:w.preis,normal:w.preis,deal:null,titel:w.titel,quelle:'gewählt'};
+    const n=candidates(it).find(o=>o.normal);
+    return {preis:w.preis,normal:w.alterPreis||(n&&n.preis)||null,deal:{preis:w.preis,bis:w.bis},titel:w.titel,quelle:'gewählt'};
+  }
+  if(it.angebotPreis!=null&&(!it.angebotBis||it.angebotBis>=t))return {preis:it.angebotPreis,normal:it.preis,deal:{preis:it.angebotPreis,bis:it.angebotBis},quelle:'eigen'};
+  if(it.preis!=null)return {preis:it.preis,normal:it.preis,deal:null,quelle:'eigen'};
+  const c=candidates(it),off=c.find(o=>!o.normal),nor=c.find(o=>o.normal);
+  if(off&&(!nor||c.indexOf(off)<c.indexOf(nor)))return {preis:off.preis,normal:off.alterPreis||(nor&&nor.preis)||null,deal:{preis:off.preis,bis:off.bis},titel:off.titel,quelle:'auto'};
+  if(nor)return {preis:nor.preis,normal:nor.preis,deal:null,titel:nor.titel,quelle:'auto'};
+  if(typ!=null)return {preis:typ,normal:typ,deal:null,est:true,quelle:'schätzung'};
+  return {preis:null,normal:null,deal:null};
 }
 const qty=it=>Math.max(1,Number(it.menge)||1);
 
@@ -465,8 +492,8 @@ function vEinkauf(){
   const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="row ${it.done?'done':''}">
     <button class="check ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
     <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
-      <div class="m">${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:(!it.done&&it.laden&&matchOffers(it.name,it.laden).length?'<span class="tag acc">Angebote im Prospekt</span>':'')}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
-    <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:`<span class="muted small" data-act="edit-item" data-id="${it.id}">+ Preis</span>`}</div></div>`};
+      <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
+    <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:(pending(it)&&!it.done?`<span class="muted small" style="display:inline-flex;gap:6px;align-items:center"><span class="spin"></span>sucht…</span>`:`<span class="muted small">kein Preis</span>`)}</div></div>`};
   const sum=arr=>arr.reduce((s,it)=>{const p=effPrice(it);return s+(p.preis||0)*qty(it)},0);
   let listHtml='';
   if(!items.length){listHtml=`<div class="card empty"><div class="em">🧺</div><b>Die Liste ist leer</b>Tippe oben ein, was du brauchst. Vorschläge kommen aus deinen Angeboten und früheren Einkäufen.</div>`}
@@ -488,7 +515,8 @@ function vEinkauf(){
       <div class="ln"><span>Noch offen</span><b>${eur(rest)}</b></div>
       ${saved>0?`<div class="ln"><span>Gespart durch Angebote</span><b style="color:var(--good)">${eur(saved)}</b></div>`:''}
       ${sel==='alle'&&Object.keys(byStore).length>1?`<div style="height:1px;background:var(--line);margin:4px 0"></div>${Object.entries(byStore).sort((x,y)=>{const o=[...S.settings.laeden,''];return o.indexOf(x[0])-o.indexOf(y[0])}).map(([k,v])=>`<div class="ln"><span><i class="dot" style="background:${k?lcol(k):'var(--muted)'}"></i>${esc(k?lname(k):'Ohne Laden')}</span><b>${eur(v)}</b></div>`).join('')}`:''}
-      ${noPrice?`<div class="ln"><span class="small">${noPrice} Artikel ohne Preis</span></div>`:''}
+      ${noPrice?`<div class="ln"><span class="small">${noPrice} Artikel noch ohne Preis</span></div>`:''}
+      ${all.some(it=>effPrice(it).est)?`<div class="ln"><span class="small">„ca.“ = ungefährer Preis, der Laden hat keine Preise online</span></div>`:''}
     </div></div>`;
   return `<div class="view-head"><h2>Einkaufsliste</h2><span class="sub">${open.length} offen</span></div>
   ${storeChips(sel,'set-elad')}
@@ -505,11 +533,11 @@ function vEinkauf(){
 function suggestions(q){
   const n=norm(q);if(n.length<2)return [];
   const res=[];
-  for(const o of validOffers()){if(norm(o.titel+' '+o.produkt+' '+o.marke).includes(n))res.push({name:o.titel||o.produkt,laden:o.laden,preis:o.preis,alt:o.alterPreis,bis:o.bis,offer:true})}
-  for(const o of normalPrices()){if(norm(o.titel+' '+o.produkt).includes(n))res.push({name:o.titel,laden:o.laden,preis:o.preis,normal:true})}
+  for(const o of validOffers()){if(norm(o.titel+' '+o.produkt+' '+o.marke).includes(n))res.push({name:o.titel||o.produkt,laden:o.laden,preis:o.preis,alt:o.alterPreis,bis:o.bis,offer:true,o})}
+  for(const o of normalPrices()){if(norm(o.titel+' '+o.produkt).includes(n))res.push({name:o.titel,laden:o.laden,preis:o.preis,normal:true,o})}
   res.sort((a,b)=>a.preis-b.preis);
   const seen=new Set(res.map(r=>norm(r.name)+r.laden));
-  for(const h of S.verlauf){if(norm(h.name).includes(n)&&!seen.has(norm(h.name)+(h.laden||''))){seen.add(norm(h.name)+(h.laden||''));res.push({name:h.name,laden:h.laden||'',preis:S.preise[norm(h.name)+'|'+(h.laden||'')]??null})}}
+  for(const h of S.verlauf){if(norm(h.name).includes(n)&&!seen.has(norm(h.name)+(h.laden||''))){seen.add(norm(h.name)+(h.laden||''));res.push({name:h.name,laden:h.laden||'',preis:null})}}
   return res.slice(0,8);
 }
 function showSugg(){
@@ -520,31 +548,33 @@ function showSugg(){
   box.innerHTML=list.map((s,i)=>`<button type="button" data-act="pick-sugg" data-i="${i}"><i class="dot" style="background:${s.laden?lcol(s.laden):'var(--muted)'}"></i><span class="nm">${esc(s.name)}<br><small>${esc(s.laden?lname(s.laden):'Ohne Laden')}${s.offer?` · Angebot${s.bis?' bis '+fmtDate(s.bis):''}`:s.normal?' · Normalpreis':' · früher gekauft'}</small></span>${s.preis!=null?`<span class="pr" style="${s.offer?'':'color:var(--text)'}">${eur(s.preis)}</span>`:''}</button>`).join('');
   box._list=list;
 }
+function wahlVon(o){return {laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal}}
 function addItem(name,laden,extra={}){
   name=name.trim();if(!name)return;
-  const key=norm(name)+'|'+(laden||'');
-  const it={id:uid(),name,menge:1,laden:laden||'',preis:S.preise[key]??null,angebotPreis:null,angebotBis:null,notiz:'',done:false,added:Date.now(),...extra};
+  const it={id:uid(),name,produkt:name,menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
   S.einkauf.unshift(it);
   S.verlauf=[{name,laden:laden||''},...S.verlauf.filter(h=>!(norm(h.name)===norm(name)&&(h.laden||'')===(laden||'')))].slice(0,200);
   save();queueWatch(name);
 }
 function itemSheet(it){
-  const rem=it.laden?matchOffers(it.name,it.laden).slice(0,4):[];
-  const onWatch=(S.merkliste?.produkte||[]).some(x=>norm(x.name||x)===norm(it.name));
+  const p=effPrice(it),cand=candidates(it).slice(0,8),w=it.wahl;
+  const src={gewählt:'Von dir gewählt',auto:'Automatisch gewählt',schätzung:'Ungefährer Preis',eigen:'Selbst eingetragen'}[p.quelle]||'';
+  const now=p.preis!=null?`<div class="card banner" style="box-shadow:none"><span class="grow"><span class="muted small" style="font-weight:800;text-transform:uppercase;letter-spacing:.06em">${src}</span><br><b>${esc(p.titel||it.name)}</b>${p.est?'<br><span class="muted small">'+(it.laden?esc(lname(it.laden))+' hat keine Preise online. Der Preis ist aus den anderen Läden abgeleitet.':'Wähle einen Laden für den genauen Preis.')+'</span>':''}</span>
+      <span class="price"><b class="${p.deal?'deal':''}" style="font-family:var(--f-display);font-size:24px">${p.est?'ca. ':''}${eur(p.preis)}</b>${p.deal&&p.normal&&p.normal>p.preis?`<s>${eur(p.normal)}</s>`:''}</span></div>`
+    :pending(it)?`<div class="card banner" style="box-shadow:none"><span class="spin"></span><span class="grow">Preise werden gesucht… Das dauert 1–2 Minuten.</span></div>`
+    :`<div class="card banner" style="box-shadow:none"><span class="grow muted">Für dieses Produkt wurden keine Preise gefunden.</span></div>`;
   openSheet(`<div class="sheet-head"><h3>Artikel</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div>
   <div class="fields">
     <div class="field full"><label for="f-name">Produkt</label><input id="f-name" value="${esc(it.name)}"></div>
     <div class="field"><label for="f-menge">Menge</label><input id="f-menge" type="number" inputmode="numeric" min="1" value="${qty(it)}"></div>
     <div class="field"><label for="f-laden">Laden</label>${storeSelect('f-laden',it.laden)}</div>
-    <div class="field"><label for="f-preis">Normalpreis (€)</label><input id="f-preis" inputmode="decimal" placeholder="z. B. 1,29" value="${it.preis!=null?String(it.preis).replace('.',','):''}"></div>
-    <div class="field"><label for="f-apreis">Angebotspreis (€)</label><input id="f-apreis" inputmode="decimal" placeholder="optional" value="${it.angebotPreis!=null?String(it.angebotPreis).replace('.',','):''}"></div>
-    <div class="field"><label for="f-abis">Angebot gültig bis</label><input id="f-abis" type="date" value="${it.angebotBis||''}"></div>
-    <div class="field"><label for="f-notiz">Notiz</label><input id="f-notiz" placeholder="z. B. Bio, 1 Liter" value="${esc(it.notiz||'')}"></div>
+    <div class="field full"><label for="f-notiz">Notiz</label><input id="f-notiz" placeholder="z. B. Bio, 1 Liter" value="${esc(it.notiz||'')}"></div>
   </div>
-  ${rem.length?`<div class="field"><label>Preise bei ${esc(lname(it.laden))}</label><div class="card list" style="box-shadow:none">${rem.map((o,i)=>`<div class="offer"><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${o.normal?'Normalpreis · ':'Angebot · '}${o.info?esc(o.info)+' · ':''}${o.bis?'bis '+fmtDate(o.bis):''}</div></div><div class="pr"><b style="font-size:17px;${o.normal?'color:var(--text)':''}">${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div><button class="btn ghost sm" data-act="use-offer" data-i="${i}">Nehmen</button></div>`).join('')}</div></div>`:''}
-  ${GH.on?`<button class="btn ghost" data-act="${onWatch?'':'watch-item'}" data-id="${it.id}" ${onWatch?'disabled':''}>${ic('bell')}${onWatch?'Steht auf der Merkliste':'Angebote dafür suchen'}</button>`:''}
-  <div class="sheet-actions"><button class="btn danger" data-act="del-item" data-id="${it.id}">${ic('trash')}Löschen</button><button class="btn" data-act="save-item" data-id="${it.id}">Speichern</button></div>`);
-  sheetData.offers=rem;
+  ${now}
+  ${cand.length?`<div class="field"><label>Andere Produkte bei ${esc(lname(it.laden))}</label><div class="card list" style="box-shadow:none">${cand.map((o,i)=>{const on=p.titel===o.titel&&p.preis===o.preis;return `<div class="offer"><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${o.normal?'Normalpreis':'Angebot'+(o.bis?' bis '+fmtDate(o.bis):'')}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div><div class="pr"><b style="font-size:17px;${o.normal?'color:var(--text)':''}">${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>${on?`<span class="tag acc">gewählt</span>`:`<button class="btn ghost sm" data-act="use-offer" data-id="${it.id}" data-i="${i}">Nehmen</button>`}</div>`}).join('')}</div></div>`:''}
+  ${w||it.preis!=null||it.angebotPreis!=null?`<button class="btn ghost sm" style="align-self:flex-start" data-act="auto-price" data-id="${it.id}">${ic('refresh')}Wieder automatisch wählen</button>`:''}
+  <div class="sheet-actions"><button class="btn danger" data-act="del-item" data-id="${it.id}">${ic('trash')}Löschen</button><button class="btn" data-act="save-item" data-id="${it.id}">Fertig</button></div>`);
+  sheetData.offers=cand;
 }
 
 /* ----- Angebote ----- */
@@ -557,7 +587,7 @@ function vAngebote(){
   const status=searching?`<div class="card banner"><span class="spin"></span><span class="grow"><b>Suche läuft…</b> Die neuen Preise erscheinen in ein paar Minuten von selbst.</span></div>`
     :a&&a.status==='fehler'?`<div class="card banner"><span class="tag bad">Problem</span><span class="grow">Die letzte Suche hat nicht geklappt. Gezeigt werden die letzten gefundenen Angebote. Sag Larsen Bescheid, falls das länger so bleibt.</span></div>`:'';
   const watchHtml=`<div class="card pad sec"><h3 class="mt0" style="margin:0">Merkliste</h3>
-    <p class="note">Für diese Produkte werden Angebote und Normalpreise gesucht: sofort beim Hinzufügen und jeden Montag um 6 Uhr. Normalpreise gibt es automatisch von dm, für die anderen Läden merkt sich die App deine eingetragenen Preise.</p>
+    <p class="note">Für diese Produkte werden Angebote und Normalpreise gesucht: sofort beim Hinzufügen und jeden Montag um 6 Uhr. Normalpreise kommen von dm und REWE. Für Läden ohne Online-Preise zeigt die App einen ungefähren Preis.</p>
     <form class="addbar" data-form="add-watch" style="padding:4px 4px 4px 12px;border:1px solid var(--line);border-radius:16px" autocomplete="off">${ic('plus')}<input id="watchName" placeholder="z. B. Nutella, Kaffee, Zahnpasta" enterkeyhint="done" aria-label="Produkt für die Merkliste"><button class="btn sm" type="submit">Hinzufügen</button></form>
     ${watch.length?`<div class="chips" style="flex-wrap:wrap">${watch.map(n=>`<span class="chip" style="cursor:default">${esc(n)}<button class="icon-btn" style="width:22px;height:22px" data-act="unwatch" data-name="${esc(n)}" aria-label="${esc(n)} entfernen">${ic('x')}</button></span>`).join('')}</div>`:'<p class="note">Noch leer.</p>'}
     <div class="flex"><button class="btn ghost sm" data-act="search-now" ${searching?'disabled':''}>${ic('refresh')}Jetzt suchen</button><button class="btn ghost sm" data-act="reload">Neu laden</button></div></div>`;
@@ -570,11 +600,11 @@ function vAngebote(){
       return `<div class="card list"><div class="prod-h"><h3>${esc(p.name)}</h3>${offs.length?`<span class="tag deal">${offs.length} ${offs.length===1?'Angebot':'Angebote'}</span>`:''}</div>
       ${offs.length?offs.map(o=>{const off=o.alterPreis?Math.round((1-o.preis/o.alterPreis)*100):0;return `<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.marke&&!norm(o.titel).includes(norm(o.marke))?' · '+esc(o.marke):''}${o.bis?' · bis '+fmtDate(o.bis,{weekday:'short',day:'numeric',month:'short'}):''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div>${off>0?`<span class="tag deal" style="margin-top:4px;display:inline-block">−${off} %</span>`:''}</div>
         <div class="pr"><b>${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>
-        <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-l="${o.laden}" data-pr="${o.preis}" data-bis="${o.bis||''}" data-alt="${o.alterPreis||''}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`}).join('')
+        <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="a" data-i="${p.angebote.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`}).join('')
       :`<div class="offer"><div class="body"><div class="m">Diese Woche kein Angebot${sel!=='alle'?' bei '+esc(lname(sel)):''}.</div></div></div>`}
       ${(()=>{const np=(p.normalpreise||[]).filter(o=>(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden));return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
         <div class="pr"><b style="color:var(--text)">${eur(o.preis)}</b></div>
-        <button class="icon-btn" data-act="offer-to-list" data-p="${esc(o.titel)}" data-l="${o.laden}" data-normal="1" data-pr="${o.preis}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`).join('')}`:''})()}</div>`}).join('');
+        <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="n" data-i="${p.normalpreise.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`).join('')}`:''})()}</div>`}).join('');
   }
   return head+status+storeChips(sel,'set-alad')+`<div class="cols"><div class="sec">${body}</div><div class="side">${watchHtml}</div></div>`;
 }
@@ -705,23 +735,26 @@ document.addEventListener('click',async e=>{
     case'toggle-item':{const it=item();if(it){it.done=!it.done;save();render()}break}
     case'edit-item':{const it=item();if(it)itemSheet(it);break}
     case'save-item':{const it=item();if(!it)break;const name=val('f-name').trim();if(!name){toast('Bitte einen Namen eingeben');break}
-      Object.assign(it,{name,menge:Math.max(1,parseInt(val('f-menge'))||1),laden:val('f-laden'),preis:num(val('f-preis')),angebotPreis:num(val('f-apreis')),angebotBis:val('f-abis')||null,notiz:val('f-notiz').trim()});
-      if(it.preis!=null)S.preise[norm(it.name)+'|'+(it.laden||'')]=it.preis;
+      const laden=val('f-laden');if(laden!==it.laden)it.wahl=null;
+      if(norm(name)!==norm(it.name)){it.produkt=name;it.wahl=null;queueWatch(name)}
+      Object.assign(it,{name,menge:Math.max(1,parseInt(val('f-menge'))||1),laden,notiz:val('f-notiz').trim()});
       save();closeSheet();render();break}
-    case'use-offer':{const o=sheetData.offers&&sheetData.offers[+b.dataset.i];if(!o)break;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
-      if(o.normal){set('f-preis',String(o.preis).replace('.',','))}else{set('f-apreis',String(o.preis).replace('.',','));set('f-abis',o.bis||'');if(o.alterPreis&&!val('f-preis'))set('f-preis',String(o.alterPreis).replace('.',','))}
-      if(norm(val('f-name'))===norm(o.produkt||''))set('f-name',o.titel);toast('Übernommen – jetzt speichern');break}
+    case'auto-price':{const it=item();if(it){it.wahl=null;it.preis=null;it.angebotPreis=null;it.angebotBis=null;save();render();itemSheet(it)}break}
+    case'use-offer':{const it=item(),o=sheetData.offers&&sheetData.offers[+b.dataset.i];if(!it||!o)break;
+      const nm=val('f-name').trim()||it.name,mg=Math.max(1,parseInt(val('f-menge'))||1),nt=val('f-notiz').trim();
+      Object.assign(it,{name:nm,menge:mg,notiz:nt,wahl:wahlVon(o),preis:null,angebotPreis:null,angebotBis:null});save();render();itemSheet(it);break}
     case'del-item':S.einkauf=S.einkauf.filter(x=>x.id!==id);save();closeSheet();render();break;
     case'watch-item':{const it=item();if(it){b.disabled=true;await addWatch(it.name);closeSheet();render()}break}
     case'clear-done':{const n=S.einkauf.filter(x=>x.done).length;S.einkauf=S.einkauf.filter(x=>!x.done);save();render();toast(n+' Artikel entfernt');break}
     case'pick-sugg':{const s=$('#sugg')._list[+b.dataset.i];if(!s)break;
-      addItem(s.name,s.laden,s.offer?{angebotPreis:s.preis,angebotBis:s.bis||null,preis:s.alt||S.preise[norm(s.name)+'|'+s.laden]||null}:s.normal?{preis:s.preis}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
+      addItem(s.o?s.o.produkt:s.name,s.laden,s.o?{wahl:wahlVon(s.o)}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
     // Angebote
     case'set-alad':S.settings.angLaden=b.dataset.v;save();render();break;
     case'unwatch':b.disabled=true;await removeWatch(b.dataset.name);break;
     case'search-now':{b.disabled=true;const ok=await editMerkliste(d=>{d.suche=new Date().toISOString()},'Suche per Hand gestartet');if(ok){toast('Suche gestartet');startPolling()}else render();break}
     case'reload':await loadRemote(false);if(syncState==='ok')toast('Alles aktuell');break;
-    case'offer-to-list':{const d=b.dataset;if(d.normal){addItem(d.p,d.l,{preis:num(d.pr)});toast(`${d.p} ist auf der Einkaufsliste`);break}addItem(d.p,d.l,{angebotPreis:num(d.pr),angebotBis:d.bis||null,preis:num(d.alt)??S.preise[norm(d.p)+'|'+d.l]??null});toast(`${d.p} (${lname(d.l)}) ist auf der Einkaufsliste`);break}
+    case'offer-to-list':{const d=b.dataset,e=(S.angebote?.produkte||[]).find(x=>x.name===d.p);const o=e&&(d.k==='n'?e.normalpreise:e.angebote)[+d.i];if(!o)break;
+      addItem(e.name,o.laden,{wahl:wahlVon({...o,normal:d.k==='n'})});toast(`${o.titel} (${lname(o.laden)}) ist auf der Einkaufsliste`);break}
     // Termine
     case'sel-day':calSel=b.dataset.d;{const d=new Date(calSel+'T12:00');if(d.getMonth()!==calMonth.getMonth()){calMonth=new Date(d.getFullYear(),d.getMonth(),1)}}render();break;
     case'cal-prev':calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);render();break;
