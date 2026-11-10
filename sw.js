@@ -1,5 +1,5 @@
 // Emmas Planner: hält die App offline verfügbar. Immer zuerst das Netz, damit Updates sofort ankommen.
-const CACHE = 'emmas-planner-v1';
+const CACHE = 'emmas-planner-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png', './icons/favicon.png'];
 
 self.addEventListener('install', e => {
