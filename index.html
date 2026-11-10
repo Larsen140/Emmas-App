@@ -386,22 +386,15 @@ function validOffers(){
   for(const p of S.angebote?.produkte||[])for(const o of p.angebote||[]){if(!o.bis||o.bis>=t)out.push({...o,produkt:p.name})}
   return out;
 }
-function matchOffer(name,laden){
-  const n=norm(name);if(!n)return null;
-  let best=null;
-  for(const o of validOffers()){
-    if(laden&&o.laden!==laden)continue;
-    const pn=norm(o.produkt),tn=norm(o.titel);
-    if(pn===n||tn===n||(pn&&(n.includes(pn)||pn.includes(n)))){if(!best||o.preis<best.preis)best=o}
-  }
-  return best;
+function matchOffers(name,laden){
+  const n=norm(name);if(!n)return [];
+  return validOffers().filter(o=>{if(laden&&o.laden!==laden)return false;const pn=norm(o.produkt),tn=norm(o.titel);
+    return pn===n||tn===n||(pn&&(n.includes(pn)||pn.includes(n)))||tn.includes(n)}).sort((a,b)=>a.preis-b.preis);
 }
 function effPrice(it){
   const t=todayIso();
   const manual=it.angebotPreis!=null&&(!it.angebotBis||it.angebotBis>=t)?{preis:it.angebotPreis,bis:it.angebotBis,quelle:'eigen'}:null;
-  const remote=it.laden?matchOffer(it.name,it.laden):null;
-  let deal=manual;if(remote&&(!deal||remote.preis<deal.preis))deal={preis:remote.preis,bis:remote.bis,quelle:'prospekt'};
-  const normal=it.preis!=null?it.preis:(remote&&remote.alterPreis)||null;
+  const deal=manual,normal=it.preis;
   if(deal&&(normal==null||deal.preis<=normal))return {preis:deal.preis,normal,deal};
   return {preis:normal,normal,deal:null};
 }
@@ -457,7 +450,7 @@ function vEinkauf(){
   const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="row ${it.done?'done':''}">
     <button class="check ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
     <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
-      <div class="m">${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
+      <div class="m">${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:(!it.done&&it.laden&&matchOffers(it.name,it.laden).length?'<span class="tag acc">Angebote im Prospekt</span>':'')}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
     <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:`<span class="muted small" data-act="edit-item" data-id="${it.id}">+ Preis</span>`}</div></div>`};
   const sum=arr=>arr.reduce((s,it)=>{const p=effPrice(it);return s+(p.preis||0)*qty(it)},0);
   let listHtml='';
@@ -520,7 +513,7 @@ function addItem(name,laden,extra={}){
   save();
 }
 function itemSheet(it){
-  const p=effPrice(it),rem=it.laden?matchOffer(it.name,it.laden):null;
+  const rem=it.laden?matchOffers(it.name,it.laden).slice(0,4):[];
   const onWatch=(S.merkliste?.produkte||[]).some(x=>norm(x.name||x)===norm(it.name));
   openSheet(`<div class="sheet-head"><h3>Artikel</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div>
   <div class="fields">
@@ -532,9 +525,10 @@ function itemSheet(it){
     <div class="field"><label for="f-abis">Angebot gültig bis</label><input id="f-abis" type="date" value="${it.angebotBis||''}"></div>
     <div class="field"><label for="f-notiz">Notiz</label><input id="f-notiz" placeholder="z. B. Bio, 1 Liter" value="${esc(it.notiz||'')}"></div>
   </div>
-  ${rem?`<div class="card banner" style="box-shadow:none"><span class="tag deal">Prospekt</span><span class="grow">${esc(rem.titel)} bei ${esc(lname(rem.laden))}: <b>${eur(rem.preis)}</b>${rem.bis?' bis '+fmtDate(rem.bis):''}. Wird automatisch verrechnet.</span></div>`:''}
+  ${rem.length?`<div class="field"><label>Im Prospekt bei ${esc(lname(it.laden))}</label><div class="card list" style="box-shadow:none">${rem.map((o,i)=>`<div class="offer"><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${o.info?esc(o.info)+' · ':''}${o.bis?'bis '+fmtDate(o.bis):''}</div></div><div class="pr"><b style="font-size:17px">${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div><button class="btn ghost sm" data-act="use-offer" data-i="${i}">Nehmen</button></div>`).join('')}</div></div>`:''}
   ${GH.on?`<button class="btn ghost" data-act="${onWatch?'':'watch-item'}" data-id="${it.id}" ${onWatch?'disabled':''}>${ic('bell')}${onWatch?'Steht auf der Merkliste':'Angebote dafür suchen'}</button>`:''}
   <div class="sheet-actions"><button class="btn danger" data-act="del-item" data-id="${it.id}">${ic('trash')}Löschen</button><button class="btn" data-act="save-item" data-id="${it.id}">Speichern</button></div>`);
+  sheetData.offers=rem;
 }
 
 /* ----- Angebote ----- */
@@ -693,6 +687,8 @@ document.addEventListener('click',async e=>{
       Object.assign(it,{name,menge:Math.max(1,parseInt(val('f-menge'))||1),laden:val('f-laden'),preis:num(val('f-preis')),angebotPreis:num(val('f-apreis')),angebotBis:val('f-abis')||null,notiz:val('f-notiz').trim()});
       if(it.preis!=null)S.preise[norm(it.name)+'|'+(it.laden||'')]=it.preis;
       save();closeSheet();render();break}
+    case'use-offer':{const o=sheetData.offers&&sheetData.offers[+b.dataset.i];if(!o)break;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
+      set('f-apreis',String(o.preis).replace('.',','));set('f-abis',o.bis||'');if(o.alterPreis&&!val('f-preis'))set('f-preis',String(o.alterPreis).replace('.',','));toast('Übernommen – jetzt speichern');break}
     case'del-item':S.einkauf=S.einkauf.filter(x=>x.id!==id);save();closeSheet();render();break;
     case'watch-item':{const it=item();if(it){b.disabled=true;await addWatch(it.name);closeSheet();render()}break}
     case'clear-done':{const n=S.einkauf.filter(x=>x.done).length;S.einkauf=S.einkauf.filter(x=>!x.done);save();render();toast(n+' Artikel entfernt');break}
