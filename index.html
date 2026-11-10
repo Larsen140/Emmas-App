@@ -301,7 +301,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='1.7.1';
-const BUILD='2026-11-10-2200'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-10-2215'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -322,8 +322,7 @@ const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d980
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
   {v:'1.7.1',d:'10.11.2026',t:'Liste teilen mit allen Details',items:[
-    ['Besser','Geteilte Liste sieht aus wie ein Einkaufszettel: nach Läden, mit Kästchen, Marke, Packungsgröße, Angebot und Statt-Preis.'],
-    ['Neu','Darunter eine Gesamtrechnung wie ein Kassenbon, mit Zwischensumme pro Laden und Ersparnis.']]},
+    ['Besser','Geteilte Liste als kurzer Einkaufszettel: nach Läden, eine Zeile pro Artikel mit Preis, unten die Gesamtsumme.']]},
   {v:'1.7',d:'10.11.2026',t:'Flüssiger und schöner',items:[
     ['Neu','Wischen: nach rechts zum Abhaken, nach links zum Löschen (Einkauf und To-dos).'],
     ['Neu','„Rückgängig“ nach dem Löschen.'],
@@ -623,47 +622,24 @@ function collapseThen(el,fn,delay=0){
 }
 // Packungsgröße aus Texten wie "Je 250 ml", "0,05 l (69,00 € je 1 l)", "1-l-Packung"
 function groesse(t){const m=String(t||'').match(/(\d+(?:[.,]\d+)?)\s*-?\s*(ml|cl|l|g|kg|St(?:ück|\.)?|Stk\.?|er)\b/i);return m?m[1]+' '+m[2].replace(/^St.*$/i,'Stück'):''}
-// Text für WhatsApp & Co.: oben die Liste, unten die Rechnung als Kassenbon (```-Block = gleichbreite Schrift)
-const LEMO={aldi:'🔵',lidl:'🟡',hit:'🟠',edeka:'🟢',rewe:'🔴',dm:'🟣',rossmann:'🌸','':'⚪'};
+// Kurzer Einkaufszettel für WhatsApp & Co.
 function shareText(){
   const open=S.einkauf.filter(x=>!x.done);const grp={};open.forEach(x=>{(grp[x.laden||'']=grp[x.laden||'']||[]).push(x)});
   const order=[...S.settings.laeden,''].filter(k=>grp[k]);Object.keys(grp).forEach(k=>{if(!order.includes(k))order.push(k)});
-  const d=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
-  const nArt=open.reduce((a,x)=>a+qty(x),0);
-  const W=28,num=v=>(Number(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const cut=(t,n)=>t.length>n?t.slice(0,n-1)+'…':t;
-  const line=(l,r)=>{l=cut(l,W-r.length-4);const n=W-l.length-r.length;return l+' '+'.'.repeat(n-2)+' '+r};
-  const lineS=(l,r)=>l+' '.repeat(Math.max(1,W-l.length-r.length))+r;
-  const L=[`🛒 *EINKAUFSLISTE*`,`_${d}_ · ${nArt} ${nArt===1?'Artikel':'Artikel'}`,'━━━━━━━━━━━━━━━━'];
-  const bon=[];let total=0,saved=0,hasEst=false,noPrice=0;
+  const d=new Date().toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'numeric'});
+  const L=[`🛒 *Einkaufsliste* · ${d}`];let total=0,saved=0,est=false,deal=false;
   for(const k of order){
-    const arr=grp[k];let sum=0;
-    L.push('',`${LEMO[k]||'⚪'} *${(k?lname(k):'Ohne Laden').toUpperCase()}*`);
-    bon.push((k?lname(k):'Ohne Laden').toUpperCase());
-    for(const x of arr){
-      const p=effPrice(x),q=qty(x),src=p.src||{};
-      const prod=p.titel&&norm(p.titel)!==norm(x.name)?p.titel:'';
-      const size=groesse(src.info)||'';
-      L.push(`☐ *${q>1?q+'× ':''}${x.name}*`);
-      const det=[prod,size&&!groesse(prod)?size:''].filter(Boolean).join(' · ');
-      if(det)L.push(`     ${det}`);
-      if(p.preis!=null){
-        sum+=p.preis*q;if(p.est)hasEst=true;
-        if(p.deal){let t=`     🏷️ *${eur(p.preis)}*${q>1?' je':''}`;if(p.normal&&p.normal>p.preis){t+=` statt ~${eur(p.normal)}~`;saved+=(p.normal-p.preis)*q}if(p.deal.bis)t+=` _bis ${fmtDate(p.deal.bis,{weekday:'short',day:'numeric',month:'numeric'})}_`;L.push(t)}
-        else L.push(`     ${p.est?'ca. ':''}${eur(p.preis)}${q>1?' je':''}`);
-      }else noPrice++;
-      if(x.notiz)L.push(`     📝 _${x.notiz}_`);
-      bon.push(line(`${q>1?q+'x ':''}${x.name}`,p.preis!=null?(p.est?'~':'')+num(p.preis*q):'–'));
+    L.push('',`*${k?lname(k):'Ohne Laden'}*`);
+    for(const x of grp[k]){
+      const p=effPrice(x),q=qty(x);let t=`☐ ${q>1?q+'× ':''}${x.name}`;
+      if(x.notiz)t+=` _(${x.notiz})_`;
+      if(p.preis!=null){total+=p.preis*q;if(p.est)est=true;t+=` – ${p.est?'ca. ':''}${eur(p.preis*q)}`;
+        if(p.deal){deal=true;t+=' 🏷️';if(p.normal&&p.normal>p.preis)saved+=(p.normal-p.preis)*q}}
+      L.push(t);
     }
-    total+=sum;
-    bon.push(lineS('',  '------'),lineS('',num(sum)),'');
   }
-  bon.pop();bon.push('='.repeat(W),lineS('SUMME',(hasEst?'ca. ':'')+num(total)+' €'),'='.repeat(W));
-  if(saved>0.004)bon.push(lineS('Gespart',num(saved)+' €'));
-  L.push('','━━━━━━━━━━━━━━━━','🧾 *RECHNUNG*','```',...bon,'```');
-  if(hasEst)L.push('_~ = ungefährer Preis_');
-  if(noPrice)L.push(`_${noPrice} Artikel ohne Preis_`);
-  L.push('','💛 _Emmas Planner_');
+  L.push('',`💶 *Gesamt: ${est?'ca. ':''}${eur(total)}*${saved>0.004?` · ${eur(saved)} gespart`:''}`);
+  if(deal)L.push('_🏷️ = Angebot_');
   return L.join('\n');
 }
 function undoToast(msg,undo){toast(msg,5000,{label:'Rückgängig',fn:undo})}
