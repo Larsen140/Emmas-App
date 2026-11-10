@@ -222,7 +222,8 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.2';
+const VERSION='1.3';
+const BUILD='2026-11-10-2058'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -239,6 +240,9 @@ const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',he
 const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.3',d:'10.11.2026',t:'Schnellere Updates',items:[
+    ['Neu','Neue Versionen der App kommen jetzt sofort: beim Öffnen und alle 2 Minuten wird nachgeschaut.'],
+    ['Besser','Verbinden zeigt genau, was am Zugangscode fehlt.']]},
   {v:'1.2',d:'10.11.2026',t:'Preise kommen von selbst',items:[
     ['Neu','Du musst keine Preise mehr eintippen: Die App sucht sie und wählt das passende Produkt selbst aus.'],
     ['Neu','Angebote mit Statt-Preis, Normalpreise von dm und REWE, für die übrigen Läden ein ungefährer Preis („ca.“).'],
@@ -829,7 +833,26 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 /* ---------- Start ---------- */
 applyTheme();render();
 if(GH.on){setSync('laden');lastLoad=Date.now();loadRemote(true)}
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
+/* Schnelle Updates: beim Öffnen, beim Zurückkehren und alle 2 Minuten nach einer neuen Version schauen */
+let updT=0,updReady=false;
+async function checkUpdate(){
+  if(location.protocol!=='https:'||Date.now()-updT<20e3)return;updT=Date.now();
+  try{
+    const r=await fetch('index.html?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+    const m=(await r.text()).match(/const BUILD='([^']+)'/);
+    // nur bei neuerer Version, und höchstens einmal pro Version neu laden (keine Endlosschleife)
+    if(m&&m[1]>BUILD){let tried='';try{tried=sessionStorage.getItem('ep-upd')||''}catch(e){}if(tried===m[1])return;try{sessionStorage.setItem('ep-upd',m[1])}catch(e){}applyUpdate()}
+  }catch(e){}
+}
+function applyUpdate(){
+  const busy=document.querySelector('.scrim')||['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+  if(!busy){location.reload();return}
+  if(updReady)return;updReady=true;
+  const t=document.createElement('button');t.className='toast';t.style.border='0';t.style.cursor='pointer';t.textContent='Neue Version da – tippen zum Laden';t.onclick=()=>location.reload();document.body.appendChild(t);
+}
+setTimeout(checkUpdate,1500);setInterval(checkUpdate,120e3);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()});
 </script>
 </body>
 </html>
