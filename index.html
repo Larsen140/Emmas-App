@@ -307,7 +307,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='1.9';
-const BUILD='2026-11-11-0010'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-11-0015'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -940,8 +940,6 @@ function vSettings(){
       <p class="note" id="connErr" hidden style="color:var(--bad);font-weight:700"></p>
       <button class="btn" data-act="connect">${ic('link')}Verbinden</button>`}
   </div>
-  <div class="card pad sec"><h3>Daten</h3><p class="note">Liste, Termine und To-dos sind auf diesem Gerät gespeichert. Sichere sie ab und zu.</p>
-    <div class="flex"><button class="btn ghost sm" data-act="export">Sichern</button><label class="btn ghost sm" style="cursor:pointer">Wiederherstellen<input type="file" id="importIn" accept="application/json,.json" hidden></label><button class="btn danger sm" data-act="reset">Alles löschen</button></div></div>
   <p class="muted small" style="text-align:center;margin:0">Emmas Planner · Version ${VERSION} · mit ♥ gemacht</p>
   </div></div>`;
 }
