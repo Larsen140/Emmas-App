@@ -300,8 +300,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.7';
-const BUILD='2026-11-10-2150'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='1.7.1';
+const BUILD='2026-11-10-2200'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -321,6 +321,9 @@ const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',he
 const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.7.1',d:'10.11.2026',t:'Liste teilen mit allen Details',items:[
+    ['Besser','Geteilte Liste sieht aus wie ein Einkaufszettel: nach Läden, mit Kästchen, Marke, Packungsgröße, Angebot und Statt-Preis.'],
+    ['Neu','Darunter eine Gesamtrechnung wie ein Kassenbon, mit Zwischensumme pro Laden und Ersparnis.']]},
   {v:'1.7',d:'10.11.2026',t:'Flüssiger und schöner',items:[
     ['Neu','Wischen: nach rechts zum Abhaken, nach links zum Löschen (Einkauf und To-dos).'],
     ['Neu','„Rückgängig“ nach dem Löschen.'],
@@ -545,15 +548,15 @@ function effPrice(it){
   const ty=e&&e.typisch,drog=['dm','rossmann'].includes(it.laden);
   const typ=ty?(ty.preis??((drog?ty.drogerie:ty.lebensmittel)||ty.lebensmittel||ty.drogerie||{}).preis??null):null;
   if(w&&w.laden===it.laden&&(w.normal||!w.bis||w.bis>=t)){
-    if(w.normal)return {preis:w.preis,normal:w.preis,deal:null,titel:w.titel,quelle:'gewählt',ki:!!w.ki};
+    if(w.normal)return {preis:w.preis,normal:w.preis,deal:null,titel:w.titel,quelle:'gewählt',ki:!!w.ki,src:w};
     const n=candidates(it).find(o=>o.normal);
-    return {preis:w.preis,normal:w.alterPreis||(n&&n.preis)||null,deal:{preis:w.preis,bis:w.bis},titel:w.titel,quelle:'gewählt'};
+    return {preis:w.preis,normal:w.alterPreis||(n&&n.preis)||null,deal:{preis:w.preis,bis:w.bis},titel:w.titel,quelle:'gewählt',src:w};
   }
   if(it.angebotPreis!=null&&(!it.angebotBis||it.angebotBis>=t))return {preis:it.angebotPreis,normal:it.preis,deal:{preis:it.angebotPreis,bis:it.angebotBis},quelle:'eigen'};
   if(it.preis!=null)return {preis:it.preis,normal:it.preis,deal:null,quelle:'eigen'};
   const c=candidates(it),off=c.find(o=>!o.normal),nor=c.find(o=>o.normal);
-  if(off&&(!nor||c.indexOf(off)<c.indexOf(nor)))return {preis:off.preis,normal:off.alterPreis||(nor&&nor.preis)||null,deal:{preis:off.preis,bis:off.bis},titel:off.titel,quelle:'auto'};
-  if(nor)return {preis:nor.preis,normal:nor.preis,deal:null,titel:nor.titel,quelle:'auto',ki:!!nor.ki};
+  if(off&&(!nor||c.indexOf(off)<c.indexOf(nor)))return {preis:off.preis,normal:off.alterPreis||(nor&&nor.preis)||null,deal:{preis:off.preis,bis:off.bis},titel:off.titel,quelle:'auto',src:off};
+  if(nor)return {preis:nor.preis,normal:nor.preis,deal:null,titel:nor.titel,quelle:'auto',ki:!!nor.ki,src:nor};
   if(typ!=null)return {preis:typ,normal:typ,deal:null,est:true,quelle:'schätzung'};
   return {preis:null,normal:null,deal:null};
 }
@@ -617,6 +620,51 @@ function confetti(){
 function collapseThen(el,fn,delay=0){
   if(!el||REDUCE){fn();return}
   setTimeout(()=>{el.style.height=el.offsetHeight+'px';el.classList.add('collapse');void el.offsetHeight;el.style.height='0px';el.style.opacity='0';setTimeout(fn,320)},delay);
+}
+// Packungsgröße aus Texten wie "Je 250 ml", "0,05 l (69,00 € je 1 l)", "1-l-Packung"
+function groesse(t){const m=String(t||'').match(/(\d+(?:[.,]\d+)?)\s*-?\s*(ml|cl|l|g|kg|St(?:ück|\.)?|Stk\.?|er)\b/i);return m?m[1]+' '+m[2].replace(/^St.*$/i,'Stück'):''}
+// Text für WhatsApp & Co.: oben die Liste, unten die Rechnung als Kassenbon (```-Block = gleichbreite Schrift)
+const LEMO={aldi:'🔵',lidl:'🟡',hit:'🟠',edeka:'🟢',rewe:'🔴',dm:'🟣',rossmann:'🌸','':'⚪'};
+function shareText(){
+  const open=S.einkauf.filter(x=>!x.done);const grp={};open.forEach(x=>{(grp[x.laden||'']=grp[x.laden||'']||[]).push(x)});
+  const order=[...S.settings.laeden,''].filter(k=>grp[k]);Object.keys(grp).forEach(k=>{if(!order.includes(k))order.push(k)});
+  const d=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+  const nArt=open.reduce((a,x)=>a+qty(x),0);
+  const W=28,num=v=>(Number(v)||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const cut=(t,n)=>t.length>n?t.slice(0,n-1)+'…':t;
+  const line=(l,r)=>{l=cut(l,W-r.length-4);const n=W-l.length-r.length;return l+' '+'.'.repeat(n-2)+' '+r};
+  const lineS=(l,r)=>l+' '.repeat(Math.max(1,W-l.length-r.length))+r;
+  const L=[`🛒 *EINKAUFSLISTE*`,`_${d}_ · ${nArt} ${nArt===1?'Artikel':'Artikel'}`,'━━━━━━━━━━━━━━━━'];
+  const bon=[];let total=0,saved=0,hasEst=false,noPrice=0;
+  for(const k of order){
+    const arr=grp[k];let sum=0;
+    L.push('',`${LEMO[k]||'⚪'} *${(k?lname(k):'Ohne Laden').toUpperCase()}*`);
+    bon.push((k?lname(k):'Ohne Laden').toUpperCase());
+    for(const x of arr){
+      const p=effPrice(x),q=qty(x),src=p.src||{};
+      const prod=p.titel&&norm(p.titel)!==norm(x.name)?p.titel:'';
+      const size=groesse(src.info)||'';
+      L.push(`☐ *${q>1?q+'× ':''}${x.name}*`);
+      const det=[prod,size&&!groesse(prod)?size:''].filter(Boolean).join(' · ');
+      if(det)L.push(`     ${det}`);
+      if(p.preis!=null){
+        sum+=p.preis*q;if(p.est)hasEst=true;
+        if(p.deal){let t=`     🏷️ *${eur(p.preis)}*${q>1?' je':''}`;if(p.normal&&p.normal>p.preis){t+=` statt ~${eur(p.normal)}~`;saved+=(p.normal-p.preis)*q}if(p.deal.bis)t+=` _bis ${fmtDate(p.deal.bis,{weekday:'short',day:'numeric',month:'numeric'})}_`;L.push(t)}
+        else L.push(`     ${p.est?'ca. ':''}${eur(p.preis)}${q>1?' je':''}`);
+      }else noPrice++;
+      if(x.notiz)L.push(`     📝 _${x.notiz}_`);
+      bon.push(line(`${q>1?q+'x ':''}${x.name}`,p.preis!=null?(p.est?'~':'')+num(p.preis*q):'–'));
+    }
+    total+=sum;
+    bon.push(lineS('',  '------'),lineS('',num(sum)),'');
+  }
+  bon.pop();bon.push('='.repeat(W),lineS('SUMME',(hasEst?'ca. ':'')+num(total)+' €'),'='.repeat(W));
+  if(saved>0.004)bon.push(lineS('Gespart',num(saved)+' €'));
+  L.push('','━━━━━━━━━━━━━━━━','🧾 *RECHNUNG*','```',...bon,'```');
+  if(hasEst)L.push('_~ = ungefährer Preis_');
+  if(noPrice)L.push(`_${noPrice} Artikel ohne Preis_`);
+  L.push('','💛 _Emmas Planner_');
+  return L.join('\n');
 }
 function undoToast(msg,undo){toast(msg,5000,{label:'Rückgängig',fn:undo})}
 
@@ -699,7 +747,7 @@ function showSugg(){
   box.innerHTML=list.map((s,i)=>`<button type="button" data-act="pick-sugg" data-i="${i}"><i class="dot" style="background:${s.laden?lcol(s.laden):'var(--muted)'}"></i><span class="nm">${esc(s.name)}<br><small>${esc(s.laden?lname(s.laden):'Ohne Laden')}${s.offer?` · Angebot${s.bis?' bis '+fmtDate(s.bis):''}`:s.normal?' · Normalpreis':' · früher gekauft'}</small></span>${s.preis!=null?`<span class="pr" style="${s.offer?'':'color:var(--text)'}">${eur(s.preis)}</span>`:''}</button>`).join('');
   box._list=list;
 }
-function wahlVon(o){return {laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki}}
+function wahlVon(o){return {laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki,info:o.info||'',grundpreis:o.grundpreis||null,einheit:o.einheit||''}}
 function addItem(name,laden,extra={}){
   name=name.trim();if(!name)return;
   const it={id:uid(),name,produkt:name,menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
@@ -924,9 +972,7 @@ document.addEventListener('click',async e=>{
     case'toggle-item':toggleItem(id,b);break;
     case'step':{const f=document.getElementById(b.dataset.t);if(f)f.value=Math.max(1,(parseInt(f.value)||1)+(+b.dataset.d));break}
     case'quick-add':{addItem(b.dataset.n,b.dataset.l);toast(`„${b.dataset.n}“ hinzugefügt`);render();break}
-    case'share-list':{const lines=[];const grp={};S.einkauf.filter(x=>!x.done).forEach(x=>{(grp[x.laden||'']=grp[x.laden||'']||[]).push(x)});
-      for(const [k,arr] of Object.entries(grp)){lines.push((k?lname(k):'Ohne Laden')+':');arr.forEach(x=>{const p=effPrice(x);lines.push(`• ${qty(x)>1?qty(x)+'× ':''}${x.name}${p.preis!=null?' ('+(p.est?'ca. ':'')+eur(p.preis*qty(x))+')':''}`)});lines.push('')}
-      const text='🛒 Einkaufsliste\n\n'+lines.join('\n').trim();
+    case'share-list':{const text=shareText();
       try{if(navigator.share){await navigator.share({title:'Einkaufsliste',text})}else{await navigator.clipboard.writeText(text);toast('Liste kopiert')}}catch(err){if(err&&err.name!=='AbortError'){try{await navigator.clipboard.writeText(text);toast('Liste kopiert')}catch(_){}}}
       break}
     case'edit-item':{const it=item();if(it)itemSheet(it);break}
