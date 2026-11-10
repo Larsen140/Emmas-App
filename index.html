@@ -225,6 +225,66 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 .install .arrow{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 6px);transform:translateX(-50%);font-size:30px;color:var(--accent);animation:bob 1.2s ease-in-out infinite}
 @keyframes bob{50%{transform:translate(-50%,8px)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ===== 1.7: flüssiger, schöner ===== */
+.card{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--surface) 95%,transparent)}
+.btn{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 78%,#fff) 0%,var(--accent) 48%,color-mix(in srgb,var(--accent) 84%,#000) 100%);transition:transform .2s cubic-bezier(.3,1.7,.5,1),box-shadow .2s,filter .2s}
+.btn.ghost{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.btn.danger{background:color-mix(in srgb,var(--bad) 13%,transparent)}
+.btn:active,.chip:active,.icon-btn:active,.day:active,.theme:active,.pat:active{transform:scale(.93)}
+.chip,.icon-btn,.day,.theme,.pat{transition:background .25s,color .25s,border-color .25s,transform .2s cubic-bezier(.3,1.7,.5,1)}
+nav.tabs{isolation:isolate}
+.tab-ind{position:absolute;top:6px;bottom:6px;left:0;width:0;border-radius:22px;z-index:-1;background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 24%,transparent),color-mix(in srgb,var(--accent) 11%,transparent));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent),0 6px 14px -8px color-mix(in srgb,var(--accent) 60%,transparent);transition:transform .5s cubic-bezier(.3,1.3,.4,1),width .5s cubic-bezier(.3,1.3,.4,1)}
+.tab[aria-selected="true"]{background:transparent}
+.tab[aria-selected="true"] svg.i{animation:tabpop .5s cubic-bezier(.3,1.8,.5,1)}
+@keyframes tabpop{40%{transform:translateY(-4px) scale(1.16)}}
+@keyframes rise{from{opacity:0;transform:translateY(16px) scale(.985)}}
+.wrap.enter>*,.wrap.enter .sec>*,.wrap.enter .side>*{animation:rise .55s cubic-bezier(.2,.85,.25,1) both}
+.wrap.enter>*:nth-child(2){animation-delay:.04s}.wrap.enter>*:nth-child(3){animation-delay:.08s}.wrap.enter>*:nth-child(4){animation-delay:.12s}.wrap.enter>*:nth-child(5){animation-delay:.16s}
+.wrap.enter .sec>*:nth-child(2),.wrap.enter .side>*:nth-child(2){animation-delay:.14s}.wrap.enter .sec>*:nth-child(3),.wrap.enter .side>*:nth-child(3){animation-delay:.2s}.wrap.enter .sec>*:nth-child(n+4),.wrap.enter .side>*:nth-child(n+4){animation-delay:.26s}
+.check{transition:background .25s,border-color .25s,transform .35s cubic-bezier(.3,1.8,.5,1)}
+.check.pop{animation:checkpop .5s cubic-bezier(.3,1.8,.5,1)}
+@keyframes checkpop{0%{transform:scale(.6)}55%{transform:scale(1.22)}100%{transform:scale(1)}}
+.check svg path{stroke-dasharray:24;stroke-dashoffset:0}
+.check.pop.on svg path{animation:draw .35s .08s ease-out both}
+@keyframes draw{from{stroke-dashoffset:24}}
+.row .t{background:linear-gradient(currentColor,currentColor) left 58%/0 1.6px no-repeat;transition:background-size .4s cubic-bezier(.4,0,.2,1),color .3s}
+.row.done .t{text-decoration:none;background-size:100% 1.6px}
+.row{transition:opacity .3s}
+.collapse{overflow:hidden;transition:height .32s cubic-bezier(.4,0,.2,1),opacity .25s,transform .32s cubic-bezier(.4,0,.2,1)!important}
+.sw{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.sw:last-child{border-bottom:0}
+.sw>.row{position:relative;z-index:1;border-bottom:0;background:var(--surface);touch-action:pan-y;transition:transform .35s cubic-bezier(.2,1.2,.3,1)}
+.sw>.row.dragging{transition:none}
+.sw-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-weight:800;font-size:14px;color:#fff;background:var(--good)}
+.sw-bg.del{background:var(--bad)}
+.sw-bg .r,.sw-bg.del .l{visibility:hidden}.sw-bg.del .r{visibility:visible}
+.confetti{position:fixed;left:50%;top:42%;width:9px;height:13px;border-radius:2px;z-index:60;pointer-events:none;animation:conf 1.4s cubic-bezier(.12,.75,.3,1) forwards}
+@keyframes conf{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:0}}
+.grab,.sheet-head{touch-action:none}
+.grab{width:42px;height:5px;border-radius:3px;background:color-mix(in srgb,var(--text) 18%,transparent);margin:-8px auto -2px;flex:none;cursor:grab}
+.sheet{animation:up .5s cubic-bezier(.2,1.15,.3,1);transition:transform .3s cubic-bezier(.2,.9,.3,1)}
+.sheet.dragging{transition:none}
+.scrim{transition:opacity .25s}
+.scrim.closing{opacity:0;pointer-events:none}
+.scrim.closing .sheet{transform:translateY(110%)}
+@keyframes up{from{transform:translateY(60px);opacity:0}}
+.toast{display:flex;gap:14px;align-items:center}
+.toast button{border:0;background:transparent;color:var(--soft);font-weight:800;font-size:14px;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:46px;height:48px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--bg) 55%,transparent);font-size:22px;font-weight:700;cursor:pointer;flex:none;transition:transform .2s cubic-bezier(.3,1.7,.5,1)}
+.stepper button:active{transform:scale(.88)}
+.field .stepper input{text-align:center;padding:0 4px}
+.quick{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px;margin:-4px -2px 0}
+.quick::-webkit-scrollbar{display:none}
+.quick .chip{color:var(--text)}
+.quick .chip i{font-style:normal;color:var(--accent);font-weight:900}
+.head-actions{display:flex;gap:4px;align-items:center}
+.rep{font-size:12px;color:var(--accent);font-weight:800}
+.day.has-ev{font-weight:800}
+.calc{position:relative;overflow:hidden}
+.calc::after{content:"";position:absolute;right:-40px;top:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 18%,transparent),transparent);pointer-events:none}
+.bar i{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 50%,var(--good)))}
 </style>
 </head>
 <body>
@@ -240,8 +300,8 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.6';
-const BUILD='2026-11-10-2130'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='1.7';
+const BUILD='2026-11-10-2150'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -252,12 +312,24 @@ const THEMES={
   lavendel:{name:'Lavendel',bg:'#f0edf6',surface:'#fbf9ff',text:'#2c2638',accent:'#8770b4',soft:'#dcd1f0'},
   honig:{name:'Honig',bg:'#f8f0db',surface:'#fffbef',text:'#3a2c12',accent:'#c38419',soft:'#f1d89c'},
   himmel:{name:'Himmel',bg:'#eaf1f6',surface:'#f8fbfd',text:'#1f2c38',accent:'#4f86b0',soft:'#c9dcea'},
-  kakao:{name:'Kakao',bg:'#1e1814',surface:'#2a221c',text:'#f3e8db',accent:'#d6a77a',soft:'#4a3a2d',dark:true}
+  pfirsich:{name:'Pfirsich',bg:'#fbefe8',surface:'#fff9f5',text:'#3b2620',accent:'#d9714f',soft:'#f6d0bf'},
+  mint:{name:'Mint',bg:'#e9f4ef',surface:'#f8fcfa',text:'#1f302a',accent:'#3a9479',soft:'#c7e6d9'},
+  kakao:{name:'Kakao',bg:'#1e1814',surface:'#2a221c',text:'#f3e8db',accent:'#d6a77a',soft:'#4a3a2d',dark:true},
+  mitternacht:{name:'Mitternacht',bg:'#11141f',surface:'#1b1f2e',text:'#e9ecf8',accent:'#93a8ff',soft:'#2c3352',dark:true}
 };
 const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',herzen:'Herzen',bluemchen:'Blümchen',sterne:'Sterne',wellen:'Wellen'};
 const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.7',d:'10.11.2026',t:'Flüssiger und schöner',items:[
+    ['Neu','Wischen: nach rechts zum Abhaken, nach links zum Löschen (Einkauf und To-dos).'],
+    ['Neu','„Rückgängig“ nach dem Löschen.'],
+    ['Neu','Schnell hinzufügen: deine häufigsten Produkte mit einem Tipp.'],
+    ['Neu','Einkaufsliste teilen, z. B. per WhatsApp.'],
+    ['Neu','Wiederkehrende Termine (wöchentlich, monatlich, jährlich) und Schnelldatum bei To-dos.'],
+    ['Neu','Drei neue Farbthemen: Pfirsich, Mint und Mitternacht.'],
+    ['Besser','Weichere Animationen beim Tab-Wechsel, Abhaken und Schließen. Fenster lassen sich nach unten wegziehen.'],
+    ['Besser','Die App läuft spürbar flüssiger.']]},
   {v:'1.6',d:'10.11.2026',t:'Normalpreise per KI',items:[
     ['Neu','Gemini sucht mit Google die Normalpreise bei Aldi, Lidl, HIT, Edeka, REWE und Rossmann.'],
     ['Neu','KI-Preise sind gekennzeichnet und haben einen Link zur Quelle. Unplausible Preise werden aussortiert.'],
@@ -300,6 +372,7 @@ const ICONS={
   trash:'<path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/>',
   refresh:'<path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/>',
   bell:'<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+  share:'<path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
   link:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>'
 };
 const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
@@ -321,7 +394,7 @@ const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
-S=Object.assign({},DEF,S);S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
+S=Object.assign({},DEF,{haeufig:{}},S);S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
 let saveT;
 function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
@@ -350,7 +423,7 @@ function isDark(){const st=S.settings,t=THEMES[st.theme]||THEMES.latte;return t.
 function themeVars(){
   const st=S.settings,t=THEMES[st.theme]||THEMES.latte,dark=isDark();
   let v={...t};if(st.accent)v.accent=st.accent;
-  if(dark&&!t.dark){v.bg='#1d1814';v.surface='#29221d';v.text='#f2e8dc';v.soft=`color-mix(in srgb,${v.accent} 30%,#1d1814)`;v.accent=`color-mix(in srgb,${v.accent} 78%,#fff)`}
+  if(dark&&!t.dark){v.bg=`color-mix(in srgb,${v.accent} 6%,#15120f)`;v.surface=`color-mix(in srgb,${v.accent} 9%,#231e1a)`;v.text='#f2e8dc';v.soft=`color-mix(in srgb,${v.accent} 30%,#1d1814)`;v.accent=`color-mix(in srgb,${v.accent} 78%,#fff)`}
   return {v,dark};
 }
 function applyTheme(){
@@ -361,7 +434,7 @@ function applyTheme(){
   r.style.setProperty('--pat-img',patternImg(st.pattern,patCol));
   r.style.setProperty('--pat-size',PSIZE[st.pattern]||'28px');
   r.style.setProperty('--pat-op',String((dark?.35:1)*(st.patOp/100)*.55));
-  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=dark?'#1d1814':v.bg;
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=dark?'#1a1613':(v.bg.startsWith('#')?v.bg:'#f6efe4');
 }
 mq.addEventListener&&mq.addEventListener('change',applyTheme);
 
@@ -495,11 +568,20 @@ let calSel=todayIso();
 let suggQ='';
 const $=s=>document.querySelector(s);
 function showError(msg){toast(msg,7000);const c=document.getElementById('connErr');if(c){c.textContent=msg;c.hidden=false}}
-function toast(msg,ms){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),ms||2800)}
+function toast(msg,ms,action){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');
+  if(action){const sp=document.createElement('span');sp.textContent=msg;const bt=document.createElement('button');bt.textContent=action.label;bt.onclick=()=>{t.remove();action.fn()};t.append(sp,bt)}else t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),ms||2800)}
 function renderTabs(){
-  const unseen=S.seen!==VERSION;
-  $('#tabs').innerHTML=TABS.map(([k,l,i])=>`<button class="tab" role="tab" aria-selected="${tab===k}" data-tab="${k}">${ic(i)}<span>${l}</span>${k==='updates'&&unseen?'<i class="badge">1</i>':''}</button>`).join('');
+  const nav=$('#tabs'),unseen=S.seen!==VERSION;
+  if(!nav.dataset.built){nav.innerHTML='<i class="tab-ind" aria-hidden="true"></i>'+TABS.map(([k,l,i])=>`<button class="tab" role="tab" data-tab="${k}">${ic(i)}<span>${l}</span></button>`).join('');nav.dataset.built=1}
+  nav.querySelectorAll('.tab').forEach(b=>{const on=String(b.dataset.tab===tab);if(b.getAttribute('aria-selected')!==on)b.setAttribute('aria-selected',on);
+    const bd=b.querySelector('.badge'),want=b.dataset.tab==='updates'&&unseen;if(want&&!bd)b.insertAdjacentHTML('beforeend','<i class="badge">1</i>');if(!want&&bd)bd.remove()});
+  requestAnimationFrame(moveInd);
 }
+function moveInd(){const nav=$('#tabs'),b=nav.querySelector('.tab[aria-selected="true"]'),ind=nav.querySelector('.tab-ind');if(!b||!ind)return;ind.style.width=b.offsetWidth+'px';ind.style.transform=`translateX(${b.offsetLeft}px)`}
+addEventListener('resize',moveInd);
+const REDUCE=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let enterAnim=true,lastTotal=null;
 function header(){
   const d=new Date(),h=d.getHours();
   const g=h<5?'Gute Nacht':h<11?'Guten Morgen':h<17?'Hallo':h<22?'Guten Abend':'Gute Nacht';
@@ -514,9 +596,29 @@ function render(){
   try{v.innerHTML={einkauf:vEinkauf,angebote:vAngebote,termine:vTermine,todos:vTodos,updates:vUpdates,einstellungen:vSettings}[tab]()}
   catch(e){console.error(e);v.innerHTML=`<div class="card empty"><b>Hoppla</b>Da ist etwas schiefgelaufen. Lade die App neu.</div>`}
   $('#main').scrollTop=y;
+  if(enterAnim&&!REDUCE){v.classList.remove('enter');void v.offsetWidth;v.classList.add('enter');clearTimeout(render.t);render.t=setTimeout(()=>v.classList.remove('enter'),900)}
+  enterAnim=false;
+  countUp();
   if(tab==='updates'&&S.seen!==VERSION){S.seen=VERSION;save();setTimeout(renderTabs,600)}
 }
-function go(t){if(t===tab){$('#main').scrollTo({top:0,behavior:'smooth'});return}tab=t;try{localStorage.setItem(KEY+'-tab',t)}catch(e){}$('#main').scrollTop=0;suggQ='';render()}
+function go(t){if(t===tab){$('#main').scrollTo({top:0,behavior:'smooth'});return}tab=t;try{localStorage.setItem(KEY+'-tab',t)}catch(e){}$('#main').scrollTop=0;suggQ='';enterAnim=true;render()}
+function countUp(){
+  const el=document.querySelector('.calc .big');if(!el)return;const to=+el.dataset.v,from=lastTotal==null?to:lastTotal;lastTotal=to;
+  if(REDUCE||Math.abs(to-from)<.005){el.textContent=eur(to);return}
+  const t0=performance.now(),d=650;const step=n=>{const k=Math.min(1,(n-t0)/d),e=1-Math.pow(1-k,3);if(!el.isConnected)return;el.textContent=eur(from+(to-from)*e);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step);
+}
+function confetti(){
+  if(REDUCE)return;const cs=getComputedStyle(document.documentElement),cols=[cs.getPropertyValue('--accent').trim(),'#f4b6c2','#f6d365','#8fd3b6','#9ab8f5','#f2a65a'];
+  for(let i=0;i<34;i++){const c=document.createElement('i');c.className='confetti';const a=-Math.PI/2+(Math.random()-.5)*Math.PI*1.4,d=140+Math.random()*200;
+    c.style.setProperty('--x',Math.cos(a)*d+'px');c.style.setProperty('--y',Math.sin(a)*d+260+Math.random()*120+'px');c.style.setProperty('--r',(Math.random()*900-450)+'deg');
+    c.style.background=cols[i%cols.length];c.style.animationDelay=Math.random()*90+'ms';if(i%3===0)c.style.borderRadius='50%';document.body.appendChild(c);setTimeout(()=>c.remove(),1700)}
+}
+// Zeile sanft zusammenfalten, dann neu zeichnen
+function collapseThen(el,fn,delay=0){
+  if(!el||REDUCE){fn();return}
+  setTimeout(()=>{el.style.height=el.offsetHeight+'px';el.classList.add('collapse');void el.offsetHeight;el.style.height='0px';el.style.opacity='0';setTimeout(fn,320)},delay);
+}
+function undoToast(msg,undo){toast(msg,5000,{label:'Rückgängig',fn:undo})}
 
 /* ----- Einkauf ----- */
 function storeChips(sel,act){
@@ -535,11 +637,11 @@ function vEinkauf(){
   for(const it of open){(groups[it.laden||'']=groups[it.laden||'']||[]).push(it)}
   const order=[...S.settings.laeden,''].filter(k=>groups[k]);
   Object.keys(groups).forEach(k=>{if(!order.includes(k))order.push(k)});
-  const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="row ${it.done?'done':''}">
+  const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="sw"><div class="sw-bg" aria-hidden="true"><span class="l">✓ ${it.done?'Zurück':'Im Wagen'}</span><span class="r">Löschen</span></div><div class="row ${it.done?'done':''}" data-swipe="item" data-id="${it.id}">
     <button class="check ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
     <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
       <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${p.ki?'<span class="tag acc">KI-Preis</span>':''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
-    <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:(pending(it)&&!it.done?`<span class="muted small" style="display:inline-flex;gap:6px;align-items:center"><span class="spin"></span>sucht…</span>`:`<span class="muted small">kein Preis</span>`)}</div></div>`};
+    <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:(pending(it)&&!it.done?`<span class="muted small" style="display:inline-flex;gap:6px;align-items:center"><span class="spin"></span>sucht…</span>`:`<span class="muted small">kein Preis</span>`)}</div></div></div>`};
   const sum=arr=>arr.reduce((s,it)=>{const p=effPrice(it);return s+(p.preis||0)*qty(it)},0);
   let listHtml='';
   if(!items.length){listHtml=`<div class="card empty"><div class="em">🧺</div><b>Die Liste ist leer</b>Tippe oben ein, was du brauchst. Vorschläge kommen aus deinen Angeboten und früheren Einkäufen.</div>`}
@@ -554,7 +656,7 @@ function vEinkauf(){
   const noPrice=all.filter(it=>effPrice(it).preis==null).length;
   const byStore={};all.forEach(it=>{const k=it.laden||'';byStore[k]=(byStore[k]||0)+(effPrice(it).preis||0)*qty(it)});
   const calc=`<div class="card pad calc"><h3>Preisrechner</h3>
-    <div class="muted small" style="font-weight:700">Gesamt</div><div class="big">${eur(total)}</div>
+    <div class="muted small" style="font-weight:700">Gesamt</div><div class="big" data-v="${total}">${eur(lastTotal==null?total:lastTotal)}</div>
     <div class="bar" aria-hidden="true"><i style="width:${total?Math.round(inCart/total*100):0}%"></i></div>
     <div class="lines">
       <div class="ln"><span>Im Wagen</span><b>${eur(inCart)}</b></div>
@@ -564,7 +666,9 @@ function vEinkauf(){
       ${noPrice?`<div class="ln"><span class="small">${noPrice} Artikel noch ohne Preis</span></div>`:''}
       ${all.some(it=>effPrice(it).est)?`<div class="ln"><span class="small">„ca.“ = ungefährer Preis, der Laden hat keine Preise online</span></div>`:''}
     </div></div>`;
-  return `<div class="view-head"><h2>Einkaufsliste</h2><span class="sub">${open.length} offen</span></div>
+  const openNames=new Set(S.einkauf.filter(i=>!i.done).map(i=>norm(i.name)));
+  const quick=Object.values(S.haeufig||{}).filter(h=>!openNames.has(norm(h.name))).sort((a,b)=>b.n-a.n||b.t-a.t).slice(0,10);
+  return `<div class="view-head"><h2>Einkaufsliste</h2><div class="head-actions"><span class="sub">${open.length} offen</span>${S.einkauf.length?`<button class="icon-btn" data-act="share-list" aria-label="Liste teilen">${ic('share')}</button>`:''}</div></div>
   ${storeChips(sel,'set-elad')}
   <div class="cols"><div class="sec">
     <form class="card addbar" data-form="add-item" autocomplete="off">
@@ -573,6 +677,7 @@ function vEinkauf(){
       <button class="btn sm" type="submit" aria-label="Hinzufügen">${ic('plus')}</button>
       <div class="sugg" id="sugg" hidden></div>
     </form>
+    ${quick.length?`<div class="quick" aria-label="Schnell hinzufügen">${quick.map(h=>`<button class="chip" data-act="quick-add" data-n="${esc(h.name)}" data-l="${h.laden||''}"><i>+</i>${esc(h.name)}${h.laden?`<span class="dot" style="background:${lcol(h.laden)}"></span>`:''}</button>`).join('')}</div>`:''}
     ${listHtml}
   </div><div class="side">${calc}</div></div>`;
 }
@@ -600,6 +705,7 @@ function addItem(name,laden,extra={}){
   const it={id:uid(),name,produkt:name,menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
   S.einkauf.unshift(it);
   S.verlauf=[{name,laden:laden||''},...S.verlauf.filter(h=>!(norm(h.name)===norm(name)&&(h.laden||'')===(laden||'')))].slice(0,200);
+  const hk=norm(name)+'|'+(laden||'');S.haeufig=S.haeufig||{};const h=S.haeufig[hk]||{name,laden:laden||'',n:0};h.n++;h.t=Date.now();h.name=name;S.haeufig[hk]=h;
   save();queueWatch(name);
 }
 function itemSheet(it){
@@ -612,7 +718,7 @@ function itemSheet(it){
   openSheet(`<div class="sheet-head"><h3>Artikel</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div>
   <div class="fields">
     <div class="field full"><label for="f-name">Produkt</label><input id="f-name" value="${esc(it.name)}"></div>
-    <div class="field"><label for="f-menge">Menge</label><input id="f-menge" type="number" inputmode="numeric" min="1" value="${qty(it)}"></div>
+    <div class="field"><label for="f-menge">Menge</label><div class="stepper"><button type="button" data-act="step" data-t="f-menge" data-d="-1" aria-label="Weniger">−</button><input id="f-menge" type="number" inputmode="numeric" min="1" value="${qty(it)}"><button type="button" data-act="step" data-t="f-menge" data-d="1" aria-label="Mehr">+</button></div></div>
     <div class="field"><label for="f-laden">Laden</label>${storeSelect('f-laden',it.laden)}</div>
     <div class="field full"><label for="f-notiz">Notiz</label><input id="f-notiz" placeholder="z. B. Bio, 1 Liter" value="${esc(it.notiz||'')}"></div>
   </div>
@@ -656,7 +762,12 @@ function vAngebote(){
 }
 
 /* ----- Termine ----- */
-function evOn(d){return S.termine.filter(e=>e.date===d).sort((a,b)=>(a.time||'').localeCompare(b.time||''))}
+function occurs(e,d){if(e.date===d)return true;if(!e.rep||d<e.date)return false;
+  if(e.rep==='w')return Math.round((new Date(d+'T12:00')-new Date(e.date+'T12:00'))/864e5)%7===0;
+  if(e.rep==='m')return d.slice(8)===e.date.slice(8);if(e.rep==='y')return d.slice(5)===e.date.slice(5);return false}
+function nextOcc(e,from){if(!e.rep)return e.date>=from?e.date:null;let d=new Date((e.date>from?e.date:from)+'T12:00');for(let i=0;i<400;i++){const ds=iso(d);if(occurs(e,ds))return ds;d.setDate(d.getDate()+1)}return null}
+const REP={w:'wöchentlich',m:'monatlich',y:'jährlich'};
+function evOn(d){return S.termine.filter(e=>occurs(e,d)).sort((a,b)=>(a.time||'').localeCompare(b.time||''))}
 function vTermine(){
   const y=calMonth.getFullYear(),m=calMonth.getMonth();
   const first=new Date(y,m,1),start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
@@ -664,9 +775,9 @@ function vTermine(){
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=iso(d),evs=evOn(ds);
     cells+=`<button class="day ${d.getMonth()!==m?'out':''} ${ds===t?'today':''} ${ds===calSel?'sel':''}" data-act="sel-day" data-d="${ds}" aria-label="${d.toLocaleDateString('de-DE',{day:'numeric',month:'long'})}${evs.length?', '+evs.length+' Termine':''}">${d.getDate()}${evs.length?`<span class="dots">${evs.slice(0,3).map(e=>`<i style="background:${ds===calSel?'currentColor':e.color}"></i>`).join('')}</span>`:''}</button>`;
     if(i===34&&new Date(start.getTime()+35*864e5).getMonth()!==m)break;}
-  const evRow=e=>`<div class="ev" data-act="edit-ev" data-id="${e.id}"><i class="stripe" style="background:${e.color}"></i><div class="time">${e.time?esc(e.time):'ganz&shy;tägig'}</div><div style="min-width:0;flex:1"><div class="t">${esc(e.title)}</div>${e.ort||e.notiz?`<div class="m">${esc([e.ort,e.notiz].filter(Boolean).join(' · '))}</div>`:''}</div></div>`;
+  const evRow=e=>`<div class="ev" data-act="edit-ev" data-id="${e.id}"><i class="stripe" style="background:${e.color}"></i><div class="time">${e.time?esc(e.time):'ganz&shy;tägig'}</div><div style="min-width:0;flex:1"><div class="t">${esc(e.title)}${e.rep?` <span class="rep">↻ ${REP[e.rep]}</span>`:''}</div>${e.ort||e.notiz?`<div class="m">${esc([e.ort,e.notiz].filter(Boolean).join(' · '))}</div>`:''}</div></div>`;
   const dayEv=evOn(calSel);
-  const upcoming=S.termine.filter(e=>e.date>=t).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,8);
+  const upcoming=S.termine.map(e=>({...e,date:nextOcc(e,t)})).filter(e=>e.date).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,8);
   const cal=`<div class="card pad"><div class="cal-head"><button class="icon-btn" data-act="cal-prev" aria-label="Vorheriger Monat">${ic('left')}</button><b>${calMonth.toLocaleDateString('de-DE',{month:'long',year:'numeric'})}</b><button class="icon-btn" data-act="cal-next" aria-label="Nächster Monat">${ic('right')}</button></div>
     <div class="cal-grid">${['Mo','Di','Mi','Do','Fr','Sa','So'].map(w=>`<div class="wd">${w}</div>`).join('')}${cells}</div>
     <div class="flex" style="margin-top:10px"><button class="btn ghost sm" data-act="cal-today">Heute</button><button class="btn sm right" data-act="new-ev">${ic('plus')}Termin</button></div></div>`;
@@ -685,6 +796,7 @@ function evSheet(e){
     <div class="field full"><label for="e-title">Titel</label><input id="e-title" value="${esc(e.title)}" placeholder="z. B. Zahnarzt"></div>
     <div class="field"><label for="e-date">Datum</label><input id="e-date" type="date" value="${e.date}"></div>
     <div class="field"><label for="e-time">Uhrzeit</label><input id="e-time" type="time" value="${e.time||''}"></div>
+    <div class="field full"><label for="e-rep">Wiederholen</label><select id="e-rep"><option value="">Nie</option>${Object.entries(REP).map(([k,l])=>`<option value="${k}" ${e.rep===k?'selected':''}>${l[0].toUpperCase()+l.slice(1)}</option>`).join('')}</select></div>
     <div class="field full"><label for="e-ort">Ort</label><input id="e-ort" value="${esc(e.ort||'')}" placeholder="optional"></div>
     <div class="field full"><label for="e-notiz">Notiz</label><textarea id="e-notiz" placeholder="optional">${esc(e.notiz||'')}</textarea></div>
     <div class="field full"><label>Farbe</label><div class="swatches" id="e-colors">${EV_COLORS.map(c=>`<button type="button" data-act="pick-evcol" data-c="${c}" style="background:${c}" aria-pressed="${e.color===c}" aria-label="Farbe"></button>`).join('')}</div></div>
@@ -699,9 +811,9 @@ function vTodos(){
   const list=S.todos.filter(x=>f==='alle'||(f==='offen'?!x.done:x.done))
     .sort((a,b)=>a.done-b.done||(b.prio-a.prio)||((a.due||'9')).localeCompare(b.due||'9')||b.created-a.created);
   const openN=S.todos.filter(x=>!x.done).length;
-  const row=x=>{const over=x.due&&!x.done&&x.due<t;return `<div class="row ${x.done?'done':''}"><i class="prio p${x.prio||1}"></i>
+  const row=x=>{const over=x.due&&!x.done&&x.due<t;return `<div class="sw"><div class="sw-bg" aria-hidden="true"><span class="l">✓ ${x.done?'Wieder offen':'Erledigt'}</span><span class="r">Löschen</span></div><div class="row ${x.done?'done':''}" data-swipe="todo" data-id="${x.id}"><i class="prio p${x.prio||1}"></i>
     <button class="check ${x.done?'on':''}" data-act="toggle-todo" data-id="${x.id}" aria-label="${esc(x.text)} ${x.done?'wieder öffnen':'erledigen'}">${ic('ok')}</button>
-    <div class="body" data-act="edit-todo" data-id="${x.id}"><div class="t">${esc(x.text)}</div>${x.due||x.prio===3?`<div class="m">${x.prio===3?'<span class="tag bad">Wichtig</span>':''}${x.due?`<span class="${over?'tag bad':''}">${x.due===t?'Heute':over?'Überfällig · '+fmtDate(x.due):'Bis '+fmtDate(x.due,{weekday:'short',day:'numeric',month:'short'})}</span>`:''}</div>`:''}</div></div>`};
+    <div class="body" data-act="edit-todo" data-id="${x.id}"><div class="t">${esc(x.text)}</div>${x.due||x.prio===3?`<div class="m">${x.prio===3?'<span class="tag bad">Wichtig</span>':''}${x.due?`<span class="${over?'tag bad':''}">${x.due===t?'Heute':over?'Überfällig · '+fmtDate(x.due):'Bis '+fmtDate(x.due,{weekday:'short',day:'numeric',month:'short'})}</span>`:''}</div>`:''}</div></div></div>`};
   return `<div class="view-head"><h2>To-dos</h2><span class="sub">${openN} offen</span></div>
   <form class="card addbar" data-form="add-todo" autocomplete="off">${ic('plus')}<input id="todoText" placeholder="Neue Aufgabe" enterkeyhint="done" aria-label="Neue Aufgabe"><button class="btn sm" type="submit">Hinzufügen</button></form>
   <div class="seg" role="group" aria-label="Filter">${[['offen','Offen'],['erledigt','Erledigt'],['alle','Alle']].map(([k,l])=>`<button data-act="todo-filter" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
@@ -714,6 +826,7 @@ function todoSheet(x){
     <div class="field full"><label for="t-text">Aufgabe</label><input id="t-text" value="${esc(x.text)}"></div>
     <div class="field"><label for="t-due">Fällig am</label><input id="t-due" type="date" value="${x.due||''}"></div>
     <div class="field"><label for="t-prio">Wichtigkeit</label><select id="t-prio"><option value="1" ${x.prio==1?'selected':''}>Normal</option><option value="2" ${x.prio==2?'selected':''}>Mittel</option><option value="3" ${x.prio==3?'selected':''}>Wichtig</option></select></div>
+    <div class="field full"><div class="chips" style="flex-wrap:wrap">${[['0','Heute'],['1','Morgen'],['we','Wochenende'],['nw','Nächste Woche'],['','Kein Datum']].map(([v,l])=>`<button type="button" class="chip" data-act="due-chip" data-v="${v}">${l}</button>`).join('')}</div></div>
   </div>
   <div class="sheet-actions"><button class="btn danger" data-act="del-todo" data-id="${x.id}">${ic('trash')}Löschen</button><button class="btn" data-act="save-todo" data-id="${x.id}">Speichern</button></div>`);
 }
@@ -764,21 +877,58 @@ function vSettings(){
 
 /* ---------- Sheets ---------- */
 let sheetData={};
-function openSheet(html){closeSheet();sheetData={};const s=document.createElement('div');s.className='scrim';s.innerHTML=`<div class="sheet" role="dialog" aria-modal="true">${html}</div>`;s.addEventListener('click',e=>{if(e.target===s)closeSheet()});document.body.appendChild(s);const f=s.querySelector('input:not([type=hidden])');if(f&&!f.value&&matchMedia('(hover:hover)').matches)f.focus()}
-function closeSheet(){document.querySelectorAll('.scrim').forEach(s=>s.remove())}
+function openSheet(html){closeSheet(true);sheetData={};const s=document.createElement('div');s.className='scrim';s.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="grab" aria-hidden="true"></div>${html}</div>`;s.addEventListener('click',e=>{if(e.target===s)closeSheet()});document.body.appendChild(s);const f=s.querySelector('input:not([type=hidden])');if(f&&!f.value&&matchMedia('(hover:hover)').matches)f.focus()}
+function closeSheet(now){document.querySelectorAll('.scrim:not(.closing)').forEach(s=>{if(now||REDUCE){s.remove();return}s.classList.add('closing');s.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));setTimeout(()=>s.remove(),300)})}
+// Sheet nach unten wegziehen
+let sd=null;
+document.addEventListener('pointerdown',e=>{const h=e.target.closest('.grab,.sheet-head');if(!h||e.target.closest('button'))return;const sh=h.closest('.sheet');if(sh.scrollTop>0)return;sd={sh,y:e.clientY,dy:0,id:e.pointerId};sh.classList.add('dragging')});
+document.addEventListener('pointermove',e=>{if(!sd||e.pointerId!==sd.id)return;sd.dy=Math.max(0,e.clientY-sd.y);sd.sh.style.transform=`translateY(${sd.dy}px)`});
+const endSd=()=>{if(!sd)return;const {sh,dy}=sd;sd=null;sh.classList.remove('dragging');if(dy>110)closeSheet();else sh.style.transform=''};
+document.addEventListener('pointerup',endSd);document.addEventListener('pointercancel',endSd);
+// Wischen in Listen: rechts = abhaken, links = löschen
+let sw=null,swipedAt=0;
+document.addEventListener('pointerdown',e=>{const r=e.target.closest('.row[data-swipe]');if(!r||e.target.closest('.check'))return;sw={r,x:e.clientX,y:e.clientY,dx:0,on:false,id:e.pointerId}});
+document.addEventListener('pointermove',e=>{if(!sw||e.pointerId!==sw.id)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;
+  if(!sw.on){if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.4){sw.on=true;sw.r.classList.add('dragging');try{sw.r.setPointerCapture(e.pointerId)}catch(_){}}else{if(Math.abs(dy)>12)sw=null;return}}
+  sw.dx=dx;const bg=sw.r.previousElementSibling;if(bg)bg.classList.toggle('del',dx<0);sw.r.style.transform=`translateX(${Math.max(-170,Math.min(170,dx))}px)`});
+const endSw=()=>{if(!sw)return;const s=sw;sw=null;if(!s.on)return;s.r.classList.remove('dragging');swipedAt=Date.now();const id=s.r.dataset.id,kind=s.r.dataset.swipe;
+  if(s.dx>90){s.r.style.transform='';const c=s.r.querySelector('.check');kind==='item'?toggleItem(id,c):toggleTodo(id,c)}
+  else if(s.dx<-90){s.r.style.transform='translateX(-110%)';setTimeout(()=>kind==='item'?deleteItem(id,s.r.closest('.sw')):deleteTodo(id,s.r.closest('.sw')),160)}
+  else s.r.style.transform=''};
+document.addEventListener('pointerup',endSw);document.addEventListener('pointercancel',endSw);
+function toggleItem(id,checkEl){const it=S.einkauf.find(x=>x.id===id);if(!it)return;it.done=!it.done;save();
+  const row=checkEl&&checkEl.closest('.row');if(checkEl){checkEl.classList.toggle('on',it.done);checkEl.classList.remove('pop');void checkEl.offsetWidth;checkEl.classList.add('pop')}if(row)row.classList.toggle('done',it.done);
+  const allDone=it.done&&S.einkauf.length&&S.einkauf.every(x=>x.done);if(allDone){confetti();toast('Alles im Wagen! ✿')}
+  collapseThen(row&&row.closest('.sw'),render,380)}
+function toggleTodo(id,checkEl){const x=S.todos.find(t=>t.id===id);if(!x)return;x.done=!x.done;x.doneAt=x.done?Date.now():null;save();
+  const row=checkEl&&checkEl.closest('.row');if(checkEl){checkEl.classList.toggle('on',x.done);checkEl.classList.remove('pop');void checkEl.offsetWidth;checkEl.classList.add('pop')}if(row)row.classList.toggle('done',x.done);
+  if(x.done&&S.todos.every(t=>t.done)){confetti();toast('Alles erledigt! ✿')}
+  const leaves=S.settings.todoFilter!=='alle';leaves?collapseThen(row&&row.closest('.sw'),render,380):setTimeout(render,380)}
+function deleteItem(id,el){const i=S.einkauf.findIndex(x=>x.id===id);if(i<0)return;const [it]=S.einkauf.splice(i,1);save();closeSheet();
+  collapseThen(el,render);undoToast(`„${it.name}“ gelöscht`,()=>{S.einkauf.splice(Math.min(i,S.einkauf.length),0,it);save();render()})}
+function deleteTodo(id,el){const i=S.todos.findIndex(x=>x.id===id);if(i<0)return;const [x]=S.todos.splice(i,1);save();closeSheet();
+  collapseThen(el,render);undoToast('Aufgabe gelöscht',()=>{S.todos.splice(Math.min(i,S.todos.length),0,x);save();render()})}
 const val=id=>{const e=document.getElementById(id);return e?e.value:''};
 
 /* ---------- Aktionen ---------- */
 document.addEventListener('click',async e=>{
   const tb=e.target.closest('[data-tab]');if(tb){closeSheet();go(tb.dataset.tab);return}
   const b=e.target.closest('[data-act]');if(!b)return;
+  if(Date.now()-swipedAt<400&&b.closest('.row[data-swipe]'))return;
   const a=b.dataset.act,id=b.dataset.id;
   const item=()=>S.einkauf.find(x=>x.id===id);
   switch(a){
     case'close':closeSheet();break;
     // Einkauf
     case'set-elad':S.settings.einkaufLaden=b.dataset.v;save();render();break;
-    case'toggle-item':{const it=item();if(it){it.done=!it.done;save();render()}break}
+    case'toggle-item':toggleItem(id,b);break;
+    case'step':{const f=document.getElementById(b.dataset.t);if(f)f.value=Math.max(1,(parseInt(f.value)||1)+(+b.dataset.d));break}
+    case'quick-add':{addItem(b.dataset.n,b.dataset.l);toast(`„${b.dataset.n}“ hinzugefügt`);render();break}
+    case'share-list':{const lines=[];const grp={};S.einkauf.filter(x=>!x.done).forEach(x=>{(grp[x.laden||'']=grp[x.laden||'']||[]).push(x)});
+      for(const [k,arr] of Object.entries(grp)){lines.push((k?lname(k):'Ohne Laden')+':');arr.forEach(x=>{const p=effPrice(x);lines.push(`• ${qty(x)>1?qty(x)+'× ':''}${x.name}${p.preis!=null?' ('+(p.est?'ca. ':'')+eur(p.preis*qty(x))+')':''}`)});lines.push('')}
+      const text='🛒 Einkaufsliste\n\n'+lines.join('\n').trim();
+      try{if(navigator.share){await navigator.share({title:'Einkaufsliste',text})}else{await navigator.clipboard.writeText(text);toast('Liste kopiert')}}catch(err){if(err&&err.name!=='AbortError'){try{await navigator.clipboard.writeText(text);toast('Liste kopiert')}catch(_){}}}
+      break}
     case'edit-item':{const it=item();if(it)itemSheet(it);break}
     case'save-item':{const it=item();if(!it)break;const name=val('f-name').trim();if(!name){toast('Bitte einen Namen eingeben');break}
       const laden=val('f-laden');if(laden!==it.laden)it.wahl=null;
@@ -789,9 +939,9 @@ document.addEventListener('click',async e=>{
     case'use-offer':{const it=item(),o=sheetData.offers&&sheetData.offers[+b.dataset.i];if(!it||!o)break;
       const nm=val('f-name').trim()||it.name,mg=Math.max(1,parseInt(val('f-menge'))||1),nt=val('f-notiz').trim();
       Object.assign(it,{name:nm,menge:mg,notiz:nt,wahl:wahlVon(o),preis:null,angebotPreis:null,angebotBis:null});save();render();itemSheet(it);break}
-    case'del-item':S.einkauf=S.einkauf.filter(x=>x.id!==id);save();closeSheet();render();break;
+    case'del-item':deleteItem(id,null);break;
     case'watch-item':{const it=item();if(it){b.disabled=true;await addWatch(it.name);closeSheet();render()}break}
-    case'clear-done':{const n=S.einkauf.filter(x=>x.done).length;S.einkauf=S.einkauf.filter(x=>!x.done);save();render();toast(n+' Artikel entfernt');break}
+    case'clear-done':{const before=S.einkauf.slice(),n=S.einkauf.filter(x=>x.done).length;S.einkauf=S.einkauf.filter(x=>!x.done);save();render();undoToast(n+' Artikel entfernt',()=>{S.einkauf=before;save();render()});break}
     case'pick-sugg':{const s=$('#sugg')._list[+b.dataset.i];if(!s)break;
       addItem(s.o?s.o.produkt:s.name,s.laden,s.o?{wahl:wahlVon(s.o)}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
     // Angebote
@@ -810,17 +960,20 @@ document.addEventListener('click',async e=>{
     case'edit-ev':{const ev=S.termine.find(x=>x.id===id);if(ev)evSheet(ev);break}
     case'pick-evcol':sheetData.evColor=b.dataset.c;document.querySelectorAll('#e-colors button').forEach(x=>x.setAttribute('aria-pressed',x===b));break;
     case'save-ev':{const title=val('e-title').trim(),date=val('e-date');if(!title||!date){toast('Titel und Datum bitte');break}
-      const ev={id,title,date,time:val('e-time'),ort:val('e-ort').trim(),notiz:val('e-notiz').trim(),color:sheetData.evColor||EV_COLORS[0]};
+      const ev={id,title,date,time:val('e-time'),rep:val('e-rep')||'',ort:val('e-ort').trim(),notiz:val('e-notiz').trim(),color:sheetData.evColor||EV_COLORS[0]};
       const i=S.termine.findIndex(x=>x.id===id);if(i>=0)S.termine[i]=ev;else S.termine.push(ev);
       calSel=date;calMonth=new Date(date.slice(0,4),+date.slice(5,7)-1,1);save();closeSheet();render();break}
-    case'del-ev':S.termine=S.termine.filter(x=>x.id!==id);save();closeSheet();render();break;
+    case'del-ev':{const before=S.termine.slice();S.termine=S.termine.filter(x=>x.id!==id);save();closeSheet();render();undoToast('Termin gelöscht',()=>{S.termine=before;save();render()});break}
     // To-dos
-    case'toggle-todo':{const x=S.todos.find(t=>t.id===id);if(x){x.done=!x.done;x.doneAt=x.done?Date.now():null;save();render()}break}
+    case'toggle-todo':toggleTodo(id,b);break;
+    case'due-chip':{const f=document.getElementById('t-due');if(!f)break;const v=b.dataset.v,d=new Date();
+      if(v==='')f.value='';else{if(v==='we'){d.setDate(d.getDate()+((6-d.getDay()+7)%7))}else if(v==='nw'){d.setDate(d.getDate()+((8-d.getDay())%7||7))}else d.setDate(d.getDate()+(+v));f.value=iso(d)}
+      document.querySelectorAll('[data-act=due-chip]').forEach(x=>x.setAttribute('aria-pressed',x===b));break}
     case'edit-todo':{const x=S.todos.find(t=>t.id===id);if(x)todoSheet(x);break}
     case'save-todo':{const x=S.todos.find(t=>t.id===id);if(!x)break;const text=val('t-text').trim();if(!text){toast('Bitte einen Text eingeben');break}Object.assign(x,{text,due:val('t-due')||null,prio:+val('t-prio')||1});save();closeSheet();render();break}
-    case'del-todo':S.todos=S.todos.filter(x=>x.id!==id);save();closeSheet();render();break;
+    case'del-todo':deleteTodo(id,null);break;
     case'todo-filter':S.settings.todoFilter=b.dataset.v;save();render();break;
-    case'clear-todos':S.todos=S.todos.filter(x=>!x.done);save();render();break;
+    case'clear-todos':{const before=S.todos.slice();S.todos=S.todos.filter(x=>!x.done);save();render();undoToast('Erledigte gelöscht',()=>{S.todos=before;save();render()});break}
     // Einstellungen
     case'set-theme':S.settings.theme=b.dataset.v;S.settings.accent=null;save();applyTheme();render();break;
     case'set-accent':S.settings.accent=b.dataset.v||null;save();applyTheme();render();break;
