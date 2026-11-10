@@ -222,7 +222,7 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.0';
+const VERSION='1.1';
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -239,6 +239,10 @@ const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',he
 const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.1',d:'10.11.2026',t:'Preise sofort',items:[
+    ['Neu','Neue Produkte auf der Einkaufsliste werden sofort gesucht. Nach 1–2 Minuten sind Angebote und Preise da.'],
+    ['Neu','Normalpreise von dm automatisch. Bei den anderen Läden merkt sich die App die Preise, die du einträgst.'],
+    ['Neu','Beim Artikel siehst du alle Preise des Ladens und übernimmst den passenden mit „Nehmen“.']]},
   {v:'1.0',d:'10.11.2026',t:'Willkommen bei Emmas Planner',items:[
     ['Neu','Einkaufsliste mit Läden, Mengen, Preisen und Preisrechner.'],
     ['Neu','Produkte suchen: Vorschläge aus deinen Angeboten und früheren Einkäufen.'],
@@ -276,7 +280,7 @@ const lcol=k=>(LAEDEN[k]||[0,'var(--muted)'])[1];
 
 /* ---------- Speicher ---------- */
 const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],
-  settings:{theme:'latte',accent:null,pattern:'punkte',patOp:50,mode:'auto',laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
+  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,mode:'auto',laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
@@ -365,7 +369,7 @@ async function editMerkliste(fn,msg){
 let pollT;
 function startPolling(){
   searching=Date.now();clearInterval(pollT);
-  pollT=setInterval(()=>{if(!searching||Date.now()-searching>8*60e3){if(searching){searching=null;toast('Suche dauert länger – schau später nochmal rein');render()}clearInterval(pollT);return}loadRemote(true)},25e3);
+  pollT=setInterval(()=>{if(!searching||Date.now()-searching>8*60e3){if(searching){searching=null;toast('Suche dauert länger – schau später nochmal rein');render()}clearInterval(pollT);return}loadRemote(true)},15e3);
   render();
 }
 async function addWatch(name){
@@ -374,6 +378,16 @@ async function addWatch(name){
   if(exists){toast(`„${name}“ ist schon auf der Merkliste`);return}
   const ok=await editMerkliste(d=>{d.produkte=d.produkte||[];d.produkte.push({name})},`Merkliste: ${name} hinzugefügt`);
   if(ok){toast(`„${name}“ wird jetzt gesucht…`);startPolling()}
+}
+// Neue Produkte aus der Einkaufsliste sammeln und gebündelt suchen lassen
+let watchQueue=new Set(),watchT;
+function queueWatch(name){
+  if(!GH.on||!S.settings.autoSuche)return;
+  const n=norm(name);if(!n||(S.merkliste?.produkte||[]).some(p=>norm(p.name||p)===n))return;
+  watchQueue.add(name.trim());clearTimeout(watchT);
+  watchT=setTimeout(async()=>{const names=[...watchQueue];watchQueue.clear();
+    const ok=await editMerkliste(d=>{d.produkte=d.produkte||[];for(const nm of names)if(!d.produkte.some(p=>norm(p.name||p)===norm(nm)))d.produkte.push({name:nm})},`Merkliste: ${names.join(', ')} hinzugefügt`);
+    if(ok){toast(names.length===1?`Suche Preise für „${names[0]}“…`:`Suche Preise für ${names.length} Produkte…`);startPolling()}},2500);
 }
 async function removeWatch(name){
   const ok=await editMerkliste(d=>{d.produkte=(d.produkte||[]).filter(p=>norm(p.name||p)!==norm(name))},`Merkliste: ${name} entfernt`);
@@ -386,9 +400,10 @@ function validOffers(){
   for(const p of S.angebote?.produkte||[])for(const o of p.angebote||[]){if(!o.bis||o.bis>=t)out.push({...o,produkt:p.name})}
   return out;
 }
+function normalPrices(){const out=[];for(const p of S.angebote?.produkte||[])for(const o of p.normalpreise||[])out.push({...o,produkt:p.name,normal:true});return out}
 function matchOffers(name,laden){
   const n=norm(name);if(!n)return [];
-  return validOffers().filter(o=>{if(laden&&o.laden!==laden)return false;const pn=norm(o.produkt),tn=norm(o.titel);
+  return [...validOffers(),...normalPrices()].filter(o=>{if(laden&&o.laden!==laden)return false;const pn=norm(o.produkt),tn=norm(o.titel);
     return pn===n||tn===n||(pn&&(n.includes(pn)||pn.includes(n)))||tn.includes(n)}).sort((a,b)=>a.preis-b.preis);
 }
 function effPrice(it){
@@ -490,7 +505,8 @@ function vEinkauf(){
 function suggestions(q){
   const n=norm(q);if(n.length<2)return [];
   const res=[];
-  for(const o of validOffers()){if(norm(o.titel+' '+o.produkt+' '+o.marke).includes(n))res.push({name:o.produkt&&norm(o.titel).includes(norm(o.produkt))?o.titel:o.titel||o.produkt,laden:o.laden,preis:o.preis,alt:o.alterPreis,bis:o.bis,offer:true})}
+  for(const o of validOffers()){if(norm(o.titel+' '+o.produkt+' '+o.marke).includes(n))res.push({name:o.titel||o.produkt,laden:o.laden,preis:o.preis,alt:o.alterPreis,bis:o.bis,offer:true})}
+  for(const o of normalPrices()){if(norm(o.titel+' '+o.produkt).includes(n))res.push({name:o.titel,laden:o.laden,preis:o.preis,normal:true})}
   res.sort((a,b)=>a.preis-b.preis);
   const seen=new Set(res.map(r=>norm(r.name)+r.laden));
   for(const h of S.verlauf){if(norm(h.name).includes(n)&&!seen.has(norm(h.name)+(h.laden||''))){seen.add(norm(h.name)+(h.laden||''));res.push({name:h.name,laden:h.laden||'',preis:S.preise[norm(h.name)+'|'+(h.laden||'')]??null})}}
@@ -501,7 +517,7 @@ function showSugg(){
   const list=suggestions(suggQ);
   if(!list.length){box.hidden=true;return}
   box.hidden=false;
-  box.innerHTML=list.map((s,i)=>`<button type="button" data-act="pick-sugg" data-i="${i}"><i class="dot" style="background:${s.laden?lcol(s.laden):'var(--muted)'}"></i><span class="nm">${esc(s.name)}<br><small>${esc(s.laden?lname(s.laden):'Ohne Laden')}${s.offer?` · Angebot${s.bis?' bis '+fmtDate(s.bis):''}`:' · früher gekauft'}</small></span>${s.preis!=null?`<span class="pr" style="${s.offer?'':'color:var(--muted)'}">${eur(s.preis)}</span>`:''}</button>`).join('');
+  box.innerHTML=list.map((s,i)=>`<button type="button" data-act="pick-sugg" data-i="${i}"><i class="dot" style="background:${s.laden?lcol(s.laden):'var(--muted)'}"></i><span class="nm">${esc(s.name)}<br><small>${esc(s.laden?lname(s.laden):'Ohne Laden')}${s.offer?` · Angebot${s.bis?' bis '+fmtDate(s.bis):''}`:s.normal?' · Normalpreis':' · früher gekauft'}</small></span>${s.preis!=null?`<span class="pr" style="${s.offer?'':'color:var(--text)'}">${eur(s.preis)}</span>`:''}</button>`).join('');
   box._list=list;
 }
 function addItem(name,laden,extra={}){
@@ -510,7 +526,7 @@ function addItem(name,laden,extra={}){
   const it={id:uid(),name,menge:1,laden:laden||'',preis:S.preise[key]??null,angebotPreis:null,angebotBis:null,notiz:'',done:false,added:Date.now(),...extra};
   S.einkauf.unshift(it);
   S.verlauf=[{name,laden:laden||''},...S.verlauf.filter(h=>!(norm(h.name)===norm(name)&&(h.laden||'')===(laden||'')))].slice(0,200);
-  save();
+  save();queueWatch(name);
 }
 function itemSheet(it){
   const rem=it.laden?matchOffers(it.name,it.laden).slice(0,4):[];
@@ -525,7 +541,7 @@ function itemSheet(it){
     <div class="field"><label for="f-abis">Angebot gültig bis</label><input id="f-abis" type="date" value="${it.angebotBis||''}"></div>
     <div class="field"><label for="f-notiz">Notiz</label><input id="f-notiz" placeholder="z. B. Bio, 1 Liter" value="${esc(it.notiz||'')}"></div>
   </div>
-  ${rem.length?`<div class="field"><label>Im Prospekt bei ${esc(lname(it.laden))}</label><div class="card list" style="box-shadow:none">${rem.map((o,i)=>`<div class="offer"><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${o.info?esc(o.info)+' · ':''}${o.bis?'bis '+fmtDate(o.bis):''}</div></div><div class="pr"><b style="font-size:17px">${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div><button class="btn ghost sm" data-act="use-offer" data-i="${i}">Nehmen</button></div>`).join('')}</div></div>`:''}
+  ${rem.length?`<div class="field"><label>Preise bei ${esc(lname(it.laden))}</label><div class="card list" style="box-shadow:none">${rem.map((o,i)=>`<div class="offer"><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${o.normal?'Normalpreis · ':'Angebot · '}${o.info?esc(o.info)+' · ':''}${o.bis?'bis '+fmtDate(o.bis):''}</div></div><div class="pr"><b style="font-size:17px;${o.normal?'color:var(--text)':''}">${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div><button class="btn ghost sm" data-act="use-offer" data-i="${i}">Nehmen</button></div>`).join('')}</div></div>`:''}
   ${GH.on?`<button class="btn ghost" data-act="${onWatch?'':'watch-item'}" data-id="${it.id}" ${onWatch?'disabled':''}>${ic('bell')}${onWatch?'Steht auf der Merkliste':'Angebote dafür suchen'}</button>`:''}
   <div class="sheet-actions"><button class="btn danger" data-act="del-item" data-id="${it.id}">${ic('trash')}Löschen</button><button class="btn" data-act="save-item" data-id="${it.id}">Speichern</button></div>`);
   sheetData.offers=rem;
@@ -541,7 +557,7 @@ function vAngebote(){
   const status=searching?`<div class="card banner"><span class="spin"></span><span class="grow"><b>Suche läuft…</b> Die neuen Preise erscheinen in ein paar Minuten von selbst.</span></div>`
     :a&&a.status==='fehler'?`<div class="card banner"><span class="tag bad">Problem</span><span class="grow">Die letzte Suche hat nicht geklappt. Gezeigt werden die letzten gefundenen Angebote. Sag Larsen Bescheid, falls das länger so bleibt.</span></div>`:'';
   const watchHtml=`<div class="card pad sec"><h3 class="mt0" style="margin:0">Merkliste</h3>
-    <p class="note">Für diese Produkte werden jeden Montag um 6 Uhr die Prospekte durchsucht. Neue Produkte werden sofort gesucht.</p>
+    <p class="note">Für diese Produkte werden Angebote und Normalpreise gesucht: sofort beim Hinzufügen und jeden Montag um 6 Uhr. Normalpreise gibt es automatisch von dm, für die anderen Läden merkt sich die App deine eingetragenen Preise.</p>
     <form class="addbar" data-form="add-watch" style="padding:4px 4px 4px 12px;border:1px solid var(--line);border-radius:16px" autocomplete="off">${ic('plus')}<input id="watchName" placeholder="z. B. Nutella, Kaffee, Zahnpasta" enterkeyhint="done" aria-label="Produkt für die Merkliste"><button class="btn sm" type="submit">Hinzufügen</button></form>
     ${watch.length?`<div class="chips" style="flex-wrap:wrap">${watch.map(n=>`<span class="chip" style="cursor:default">${esc(n)}<button class="icon-btn" style="width:22px;height:22px" data-act="unwatch" data-name="${esc(n)}" aria-label="${esc(n)} entfernen">${ic('x')}</button></span>`).join('')}</div>`:'<p class="note">Noch leer.</p>'}
     <div class="flex"><button class="btn ghost sm" data-act="search-now" ${searching?'disabled':''}>${ic('refresh')}Jetzt suchen</button><button class="btn ghost sm" data-act="reload">Neu laden</button></div></div>`;
@@ -555,7 +571,10 @@ function vAngebote(){
       ${offs.length?offs.map(o=>{const off=o.alterPreis?Math.round((1-o.preis/o.alterPreis)*100):0;return `<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.marke&&!norm(o.titel).includes(norm(o.marke))?' · '+esc(o.marke):''}${o.bis?' · bis '+fmtDate(o.bis,{weekday:'short',day:'numeric',month:'short'}):''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div>${off>0?`<span class="tag deal" style="margin-top:4px;display:inline-block">−${off} %</span>`:''}</div>
         <div class="pr"><b>${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-l="${o.laden}" data-pr="${o.preis}" data-bis="${o.bis||''}" data-alt="${o.alterPreis||''}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`}).join('')
-      :`<div class="offer"><div class="body"><div class="m">Diese Woche kein Angebot${sel!=='alle'?' bei '+esc(lname(sel)):''}.</div></div></div>`}</div>`}).join('');
+      :`<div class="offer"><div class="body"><div class="m">Diese Woche kein Angebot${sel!=='alle'?' bei '+esc(lname(sel)):''}.</div></div></div>`}
+      ${(()=>{const np=(p.normalpreise||[]).filter(o=>(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden));return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
+        <div class="pr"><b style="color:var(--text)">${eur(o.preis)}</b></div>
+        <button class="icon-btn" data-act="offer-to-list" data-p="${esc(o.titel)}" data-l="${o.laden}" data-normal="1" data-pr="${o.preis}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`).join('')}`:''})()}</div>`}).join('');
   }
   return head+status+storeChips(sel,'set-alad')+`<div class="cols"><div class="sec">${body}</div><div class="side">${watchHtml}</div></div>`;
 }
@@ -650,6 +669,8 @@ function vSettings(){
   <div class="side sec">
   <div class="card pad sec"><h3>Läden</h3><p class="note">Diese Läden erscheinen in der Liste und bei den Angeboten.</p>
     <div class="chips" style="flex-wrap:wrap">${Object.keys(LAEDEN).map(k=>`<button class="chip" data-act="toggle-laden" data-v="${k}" aria-pressed="${st.laeden.includes(k)}"><i class="dot" style="background:${lcol(k)}"></i>${esc(lname(k))}</button>`).join('')}</div></div>
+  <div class="card pad sec"><h3>Preise automatisch suchen</h3><p class="note">Neue Produkte auf der Einkaufsliste kommen automatisch auf die Merkliste. Die Preise sind dann nach 1–2 Minuten da.</p>
+    <div class="seg"><button data-act="set-auto" data-v="1" aria-pressed="${!!st.autoSuche}">An</button><button data-act="set-auto" data-v="" aria-pressed="${!st.autoSuche}">Aus</button></div></div>
   <div class="card pad sec"><h3>Verbindung für Angebote</h3>
     ${GH.on?`<div class="flex"><span class="tag ${syncState==='fehler'?'bad':'deal'}">${syncState==='fehler'?'Fehler':'Verbunden'}</span><span class="muted small">${esc(st.repo)}</span></div>
       <p class="note">Dein Zugangscode ist nur auf diesem Gerät gespeichert.</p>
@@ -688,18 +709,19 @@ document.addEventListener('click',async e=>{
       if(it.preis!=null)S.preise[norm(it.name)+'|'+(it.laden||'')]=it.preis;
       save();closeSheet();render();break}
     case'use-offer':{const o=sheetData.offers&&sheetData.offers[+b.dataset.i];if(!o)break;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
-      set('f-apreis',String(o.preis).replace('.',','));set('f-abis',o.bis||'');if(o.alterPreis&&!val('f-preis'))set('f-preis',String(o.alterPreis).replace('.',','));toast('Übernommen – jetzt speichern');break}
+      if(o.normal){set('f-preis',String(o.preis).replace('.',','))}else{set('f-apreis',String(o.preis).replace('.',','));set('f-abis',o.bis||'');if(o.alterPreis&&!val('f-preis'))set('f-preis',String(o.alterPreis).replace('.',','))}
+      if(norm(val('f-name'))===norm(o.produkt||''))set('f-name',o.titel);toast('Übernommen – jetzt speichern');break}
     case'del-item':S.einkauf=S.einkauf.filter(x=>x.id!==id);save();closeSheet();render();break;
     case'watch-item':{const it=item();if(it){b.disabled=true;await addWatch(it.name);closeSheet();render()}break}
     case'clear-done':{const n=S.einkauf.filter(x=>x.done).length;S.einkauf=S.einkauf.filter(x=>!x.done);save();render();toast(n+' Artikel entfernt');break}
     case'pick-sugg':{const s=$('#sugg')._list[+b.dataset.i];if(!s)break;
-      addItem(s.name,s.laden,s.offer?{angebotPreis:s.preis,angebotBis:s.bis||null,preis:s.alt||S.preise[norm(s.name)+'|'+s.laden]||null}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
+      addItem(s.name,s.laden,s.offer?{angebotPreis:s.preis,angebotBis:s.bis||null,preis:s.alt||S.preise[norm(s.name)+'|'+s.laden]||null}:s.normal?{preis:s.preis}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
     // Angebote
     case'set-alad':S.settings.angLaden=b.dataset.v;save();render();break;
     case'unwatch':b.disabled=true;await removeWatch(b.dataset.name);break;
     case'search-now':{b.disabled=true;const ok=await editMerkliste(d=>{d.suche=new Date().toISOString()},'Suche per Hand gestartet');if(ok){toast('Suche gestartet');startPolling()}else render();break}
     case'reload':await loadRemote(false);if(syncState==='ok')toast('Alles aktuell');break;
-    case'offer-to-list':{const d=b.dataset;addItem(d.p,d.l,{angebotPreis:num(d.pr),angebotBis:d.bis||null,preis:num(d.alt)??S.preise[norm(d.p)+'|'+d.l]??null});toast(`${d.p} (${lname(d.l)}) ist auf der Einkaufsliste`);break}
+    case'offer-to-list':{const d=b.dataset;if(d.normal){addItem(d.p,d.l,{preis:num(d.pr)});toast(`${d.p} ist auf der Einkaufsliste`);break}addItem(d.p,d.l,{angebotPreis:num(d.pr),angebotBis:d.bis||null,preis:num(d.alt)??S.preise[norm(d.p)+'|'+d.l]??null});toast(`${d.p} (${lname(d.l)}) ist auf der Einkaufsliste`);break}
     // Termine
     case'sel-day':calSel=b.dataset.d;{const d=new Date(calSel+'T12:00');if(d.getMonth()!==calMonth.getMonth()){calMonth=new Date(d.getFullYear(),d.getMonth(),1)}}render();break;
     case'cal-prev':calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);render();break;
@@ -723,6 +745,7 @@ document.addEventListener('click',async e=>{
     // Einstellungen
     case'set-theme':S.settings.theme=b.dataset.v;S.settings.accent=null;save();applyTheme();render();break;
     case'set-accent':S.settings.accent=b.dataset.v||null;save();applyTheme();render();break;
+    case'set-auto':S.settings.autoSuche=!!b.dataset.v;save();render();break;
     case'set-mode':S.settings.mode=b.dataset.v;save();applyTheme();render();break;
     case'set-pattern':S.settings.pattern=b.dataset.v;save();applyTheme();render();break;
     case'toggle-laden':{const k=b.dataset.v,l=S.settings.laeden;if(l.includes(k)){if(l.length===1){toast('Mindestens ein Laden');break}S.settings.laeden=l.filter(x=>x!==k)}else S.settings.laeden=Object.keys(LAEDEN).filter(x=>x===k||l.includes(x));
