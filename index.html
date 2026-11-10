@@ -35,7 +35,7 @@
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;transition:background .4s}
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:var(--pat-img);background-size:var(--pat-size) var(--pat-size);opacity:var(--pat-op)}
-body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(50% 40% at 100% 100%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 70%)}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:var(--glow,none)}
 button,input,select,textarea{font:inherit;color:inherit}
 input,select,textarea{font-size:16px}
 .app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
@@ -177,6 +177,12 @@ svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stro
 .fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .fields .full{grid-column:1/-1}
 .colorrow{display:flex;align-items:center;gap:12px}
+.swatches.bgs button{width:38px;height:38px;box-shadow:0 0 0 1px var(--line),inset 0 0 0 1px rgba(0,0,0,.06)}
+.optrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.glows{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.glow{border:2px solid var(--line);border-radius:14px;height:58px;position:relative;overflow:hidden;cursor:pointer;padding:0;background:var(--bg)}
+.glow[aria-pressed="true"]{border-color:var(--accent)}
+.glow span{position:absolute;left:6px;bottom:5px;font-size:11px;font-weight:800;background:var(--surface);padding:2px 7px;border-radius:999px}
 .colorrow input[type=color]{width:46px;height:46px;border:0;border-radius:50%;padding:0;background:none;cursor:pointer}
 .colorrow input[type=color]::-webkit-color-swatch-wrapper{padding:0}
 .colorrow input[type=color]::-webkit-color-swatch{border-radius:50%;border:2px solid var(--line)}
@@ -300,8 +306,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.8';
-const BUILD='2026-11-11-0000'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='1.9';
+const BUILD='2026-11-11-0010'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -317,10 +323,20 @@ const THEMES={
   kakao:{name:'Kakao',bg:'#1e1814',surface:'#2a221c',text:'#f3e8db',accent:'#d6a77a',soft:'#4a3a2d',dark:true},
   mitternacht:{name:'Mitternacht',bg:'#11141f',surface:'#1b1f2e',text:'#e9ecf8',accent:'#93a8ff',soft:'#2c3352',dark:true}
 };
-const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',herzen:'Herzen',bluemchen:'Blümchen',sterne:'Sterne',wellen:'Wellen'};
-const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
+const PATTERNS={keine:'Keine',tupfen:'Tupfen',kreise:'Kreise',zickzack:'Zickzack',gitter:'Gitter',monde:'Monde',blaetter:'Blätter',konfetti:'Konfetti',punkte:'Punkte',karo:'Karo',streifen:'Streifen',herzen:'Herzen',bluemchen:'Blümchen',sterne:'Sterne',wellen:'Wellen'};
+const SWATCH=['#a8754f','#c06b7a','#e07a9a','#d9805f','#e0a82e','#c38419','#6a8c66','#2f9e8f','#4f86b0','#5b6ee1','#8770b4','#3b2a1e'];
+const BG_PRESETS=[['#fbf6ee','Creme'],['#ffffff','Weiß'],['#fbeef0','Rosa'],['#fdf0e6','Pfirsich'],['#fbf3dc','Vanille'],['#eef3ea','Salbei'],['#e8f4f1','Mint'],['#eaf2f8','Himmel'],['#f2eef9','Flieder'],['#f1ece6','Sand'],['#1b1714','Espresso'],['#141824','Nachtblau'],['#1f1a24','Pflaume'],['#111111','Schwarz']];
+const PATCOLS=['#ffffff','#e7b3c0','#d4a24c','#9ccfb8','#a9c4ef','#c9b3ea','#3b2a1e'];
+const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pastell:'Pastell',aurora:'Aurora'};
+const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.9',d:'11.11.2026',t:'Mehr Farben',items:[
+    ['Neu','Eigene Hintergrundfarbe mit 14 Vorlagen, von Creme bis Nachtblau.'],
+    ['Neu','Farbverläufe im Hintergrund: Sanft, Akzent, Sonnenuntergang, Pastell, Aurora.'],
+    ['Neu','7 neue Muster: Tupfen, Kreise, Zickzack, Gitter, Monde, Blätter, Konfetti.'],
+    ['Neu','Musterfarbe und Mustergröße frei wählbar, mehr Akzentfarben.'],
+    ['Neu','„Design zurücksetzen“ bringt alles auf Anfang.']]},
   {v:'1.8',d:'10.11.2026',t:'Schlauere Produktauswahl',items:[
     ['Neu','Gemini prüft jetzt kostenlos, welche Treffer wirklich passen. Bei „Milch“ landen keine Schoko-Kugeln mehr, bei „Butter“ keine Peanut Butter Cups.'],
     ['Besser','Dadurch stimmen die automatisch gewählten Produkte und die ungefähren Preise besser.']]},
@@ -395,7 +411,7 @@ const lcol=k=>(LAEDEN[k]||[0,'var(--muted)'])[1];
 
 /* ---------- Speicher ---------- */
 const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],
-  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,mode:'auto',laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
+  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,bg:null,patCol:null,patSize:100,glow:'sanft',mode:'auto',laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
@@ -418,16 +434,27 @@ function patternImg(p,col){
     herzen:`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44'><path d='M11 15.5c-3-2.3-5-4-5-6.2A2.7 2.7 0 0 1 11 8a2.7 2.7 0 0 1 5 1.3c0 2.2-2 3.9-5 6.2z' fill='${c}'/><path d='M33 37.5c-3-2.3-5-4-5-6.2A2.7 2.7 0 0 1 33 30a2.7 2.7 0 0 1 5 1.3c0 2.2-2 3.9-5 6.2z' fill='${c}' opacity='.7'/></svg>`,
     bluemchen:`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><g fill='${c}'><circle cx='12' cy='8' r='2.6'/><circle cx='16' cy='12' r='2.6'/><circle cx='12' cy='16' r='2.6'/><circle cx='8' cy='12' r='2.6'/></g><circle cx='12' cy='12' r='1.8' fill='${c}' opacity='.5'/><g fill='${c}' opacity='.65'><circle cx='36' cy='33' r='2'/><circle cx='39' cy='36' r='2'/><circle cx='36' cy='39' r='2'/><circle cx='33' cy='36' r='2'/></g></svg>`,
     sterne:`<svg xmlns='http://www.w3.org/2000/svg' width='46' height='46'><path d='M12 5l1.6 4.4L18 11l-4.4 1.6L12 17l-1.6-4.4L6 11l4.4-1.6z' fill='${c}'/><circle cx='34' cy='32' r='1.6' fill='${c}'/><circle cx='30' cy='12' r='1' fill='${c}'/></svg>`,
-    wellen:`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='20'><path d='M0 10q10-8 20 0t20 0' fill='none' stroke='${c}' stroke-width='1.8' opacity='.7'/></svg>`
+    wellen:`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='20'><path d='M0 10q10-8 20 0t20 0' fill='none' stroke='${c}' stroke-width='1.8' opacity='.7'/></svg>`,
+    tupfen:`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><circle cx='9' cy='9' r='4.2' fill='${c}'/><circle cx='27' cy='27' r='4.2' fill='${c}' opacity='.75'/></svg>`,
+    kreise:`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><circle cx='10' cy='10' r='5' fill='none' stroke='${c}' stroke-width='1.6'/><circle cx='30' cy='30' r='3' fill='none' stroke='${c}' stroke-width='1.4' opacity='.7'/></svg>`,
+    zickzack:`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='16'><path d='M0 12 8 4 16 12 24 4 32 12' fill='none' stroke='${c}' stroke-width='1.6' stroke-linejoin='round' opacity='.75'/></svg>`,
+    gitter:`<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><path d='M0 .5H24M.5 0V24' stroke='${c}' stroke-width='1' opacity='.55'/></svg>`,
+    monde:`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><path d='M17 7a8 8 0 1 0 8 11 6.5 6.5 0 1 1-8-11z' fill='${c}'/><circle cx='36' cy='34' r='1.4' fill='${c}'/><circle cx='31' cy='12' r='.9' fill='${c}'/></svg>`,
+    blaetter:`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44'><path d='M10 6c6 1 9 7 5 13-6-1-9-7-5-13z' fill='${c}'/><path d='M32 24c5 3 6 9 1 13-5-3-6-9-1-13z' fill='${c}' opacity='.65'/></svg>`,
+    konfetti:`<svg xmlns='http://www.w3.org/2000/svg' width='52' height='52'><rect x='6' y='8' width='5' height='2.4' rx='1' fill='${c}' transform='rotate(25 8 9)'/><rect x='34' y='12' width='5' height='2.4' rx='1' fill='%23f4b6c2' transform='rotate(-30 36 13)'/><circle cx='22' cy='30' r='1.8' fill='%23f6d365'/><rect x='38' y='38' width='5' height='2.4' rx='1' fill='%238fd3b6' transform='rotate(60 40 39)'/><circle cx='10' cy='42' r='1.6' fill='%239ab8f5'/></svg>`
   }[p];
   return svg?`url(data:image/svg+xml,${encodeURIComponent(svg.replace(/%23/g,'#')).replace(/'/g,'%27')})`:'none';
 }
-const PSIZE={punkte:'28px',karo:'32px',streifen:'22px',herzen:'44px',bluemchen:'48px',sterne:'46px',wellen:'40px 20px'};
+const PSIZE={tupfen:'36px',kreise:'40px',zickzack:'32px 16px',gitter:'24px',monde:'48px',blaetter:'44px',konfetti:'52px',punkte:'28px',karo:'32px',streifen:'22px',herzen:'44px',bluemchen:'48px',sterne:'46px',wellen:'40px 20px'};
 const mq=matchMedia('(prefers-color-scheme: dark)');
-function isDark(){const st=S.settings,t=THEMES[st.theme]||THEMES.latte;return t.dark||st.mode==='dunkel'||(st.mode==='auto'&&mq.matches)}
+function isDark(){const st=S.settings,t=THEMES[st.theme]||THEMES.latte;if(st.bg)return lum(st.bg)<.3;return t.dark||st.mode==='dunkel'||(st.mode==='auto'&&mq.matches)}
 function themeVars(){
   const st=S.settings,t=THEMES[st.theme]||THEMES.latte,dark=isDark();
   let v={...t};if(st.accent)v.accent=st.accent;
+  if(st.bg){const lightTheme=t.dark?THEMES.latte:t;v.bg=st.bg;
+    if(dark){v.text='#f2e8dc';v.surface=`color-mix(in srgb,${st.bg} 88%,#ffffff)`;v.soft=`color-mix(in srgb,${v.accent} 28%,${st.bg})`;if(!t.dark)v.accent=`color-mix(in srgb,${v.accent} 78%,#fff)`}
+    else{v.text=lightTheme.text;v.surface=`color-mix(in srgb,${st.bg} 30%,#ffffff)`;v.soft=`color-mix(in srgb,${v.accent} 22%,${st.bg})`;if(t.dark&&!st.accent)v.accent=lightTheme.accent}
+    return {v,dark}}
   if(dark&&!t.dark){v.bg=`color-mix(in srgb,${v.accent} 6%,#15120f)`;v.surface=`color-mix(in srgb,${v.accent} 9%,#231e1a)`;v.text='#f2e8dc';v.soft=`color-mix(in srgb,${v.accent} 30%,#1d1814)`;v.accent=`color-mix(in srgb,${v.accent} 78%,#fff)`}
   return {v,dark};
 }
@@ -435,12 +462,20 @@ function applyTheme(){
   const {v,dark}=themeVars(),r=document.documentElement,st=S.settings;
   ['bg','surface','text','accent','soft'].forEach(k=>r.style.setProperty('--'+k,v[k]));
   r.toggleAttribute('data-dark',dark);
-  const patCol=dark?'#ffffff':(st.accent||(THEMES[st.theme]||THEMES.latte).accent);
-  r.style.setProperty('--pat-img',patternImg(st.pattern,patCol));
-  r.style.setProperty('--pat-size',PSIZE[st.pattern]||'28px');
+  r.style.setProperty('--pat-img',patternImg(st.pattern,patColor()));
+  r.style.setProperty('--pat-size',patSize(st.pattern));
+  r.style.setProperty('--glow',glowCss(st.glow||'sanft'));
   r.style.setProperty('--pat-op',String((dark?.35:1)*(st.patOp/100)*.55));
-  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=dark?'#1a1613':(v.bg.startsWith('#')?v.bg:'#f6efe4');
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=v.bg.startsWith('#')?v.bg:(dark?'#1a1613':'#f6efe4');
 }
+function patColor(){const st=S.settings;if(st.patCol)return st.patCol;const t=THEMES[st.theme]||THEMES.latte;return isDark()?'#ffffff':(st.accent||(t.dark?THEMES.latte:t).accent)}
+function patSize(p){const k=(S.settings.patSize||100)/100;return (PSIZE[p]||'28px').split(' ').map(x=>Math.round(parseFloat(x)*k)+'px').join(' ')}
+function glowCss(g){return {aus:'none',
+  sanft:'radial-gradient(50% 40% at 100% 100%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 70%)',
+  akzent:'linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%,transparent),transparent 55%),radial-gradient(50% 40% at 100% 100%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%)',
+  sonne:'radial-gradient(60% 45% at 0% 0%,rgba(255,170,90,.30),transparent 70%),radial-gradient(55% 45% at 100% 100%,rgba(240,100,140,.24),transparent 70%)',
+  pastell:'radial-gradient(45% 35% at 8% 8%,rgba(255,182,193,.38),transparent 70%),radial-gradient(45% 35% at 92% 30%,rgba(173,216,230,.38),transparent 70%),radial-gradient(50% 40% at 40% 98%,rgba(200,230,180,.38),transparent 70%)',
+  aurora:'radial-gradient(60% 40% at 20% 0%,rgba(80,220,170,.26),transparent 70%),radial-gradient(55% 40% at 92% 40%,rgba(120,120,255,.24),transparent 70%),radial-gradient(60% 45% at 30% 100%,rgba(200,90,220,.22),transparent 70%)'}[g]||'none'}
 mq.addEventListener&&mq.addEventListener('change',applyTheme);
 
 /* ---------- GitHub-Verbindung ---------- */
@@ -878,9 +913,18 @@ function vSettings(){
     ${st.accent?`<button class="btn ghost sm" style="align-self:flex-start" data-act="set-accent" data-v="">Themenfarbe zurück</button>`:''}</div>
     <div class="field"><label>Hell oder dunkel</label><div class="seg">${[['auto','Automatisch'],['hell','Hell'],['dunkel','Dunkel']].map(([k,l])=>`<button data-act="set-mode" data-v="${k}" aria-pressed="${st.mode===k}" ${THEMES[st.theme]?.dark?'disabled':''}>${l}</button>`).join('')}</div></div>
   </div>
+  <div class="card pad sec"><h3>Hintergrund</h3>
+    <div class="field"><label>Hintergrundfarbe</label><div class="optrow colorrow"><input type="color" id="bgPick" value="${st.bg||(v.bg.startsWith('#')?v.bg:'#f6efe4')}" aria-label="Hintergrundfarbe wählen" style="width:46px;height:46px;border:0;border-radius:50%;padding:0;background:none"><div class="swatches bgs">${BG_PRESETS.map(([c,n])=>`<button data-act="set-bg" data-v="${c}" style="background:${c}" aria-pressed="${st.bg===c}" aria-label="${n}" title="${n}"></button>`).join('')}</div></div>
+    ${st.bg?`<button class="btn ghost sm" style="align-self:flex-start" data-act="set-bg" data-v="">Farbe vom Thema</button>`:''}</div>
+    <div class="field"><label>Farbverlauf</label><div class="glows">${Object.entries(GLOWS).map(([k,l])=>`<button class="glow" data-act="set-glow" data-v="${k}" aria-pressed="${(st.glow||'sanft')===k}" style="background-image:${glowCss(k)}"><span>${l}</span></button>`).join('')}</div></div>
+  </div>
   <div class="card pad sec"><h3>Muster</h3>
-    <div class="pats">${Object.entries(PATTERNS).map(([k,l])=>`<button class="pat" data-act="set-pattern" data-v="${k}" aria-pressed="${st.pattern===k}" style="background-image:${patternImg(k,dark?'#ffffff':(st.accent||(THEMES[st.theme]||THEMES.latte).accent))};background-size:${PSIZE[k]||'28px'}"><span>${l}</span></button>`).join('')}</div>
+    <div class="pats">${Object.entries(PATTERNS).map(([k,l])=>`<button class="pat" data-act="set-pattern" data-v="${k}" aria-pressed="${st.pattern===k}" style="background-image:${patternImg(k,patColor())};background-size:${patSize(k)}"><span>${l}</span></button>`).join('')}</div>
+    <div class="field"><label>Musterfarbe</label><div class="optrow colorrow"><input type="color" id="patPick" value="${/^#/.test(patColor())?patColor():'#a8754f'}" aria-label="Musterfarbe wählen" style="width:46px;height:46px;border:0;border-radius:50%;padding:0;background:none"><div class="swatches">${[...PATCOLS,...SWATCH.slice(0,6)].map(c=>`<button data-act="set-patcol" data-v="${c}" style="background:${c}" aria-pressed="${st.patCol===c}" aria-label="Musterfarbe ${c}"></button>`).join('')}</div></div>
+    ${st.patCol?`<button class="btn ghost sm" style="align-self:flex-start" data-act="set-patcol" data-v="">Automatisch</button>`:''}</div>
+    <div class="field"><label for="patSize">Größe</label><input type="range" id="patSize" min="60" max="220" step="10" value="${st.patSize||100}"></div>
     <div class="field"><label for="patOp">Stärke</label><input type="range" id="patOp" min="10" max="100" value="${st.patOp}"></div>
+    <button class="btn ghost sm" style="align-self:flex-start" data-act="reset-design">${ic('refresh')}Design zurücksetzen</button>
   </div></div>
   <div class="side sec">
   <div class="card pad sec"><h3>Läden</h3><p class="note">Diese Läden erscheinen in der Liste und bei den Angeboten.</p>
@@ -1005,6 +1049,10 @@ document.addEventListener('click',async e=>{
     case'set-auto':S.settings.autoSuche=!!b.dataset.v;save();render();break;
     case'set-mode':S.settings.mode=b.dataset.v;save();applyTheme();render();break;
     case'set-pattern':S.settings.pattern=b.dataset.v;save();applyTheme();render();break;
+    case'set-bg':S.settings.bg=b.dataset.v||null;save();applyTheme();render();break;
+    case'set-patcol':S.settings.patCol=b.dataset.v||null;save();applyTheme();render();break;
+    case'set-glow':S.settings.glow=b.dataset.v;save();applyTheme();render();break;
+    case'reset-design':{const keep=S.settings;const d=DEF.settings;Object.assign(keep,{theme:d.theme,accent:null,pattern:d.pattern,patOp:d.patOp,bg:null,patCol:null,patSize:100,glow:'sanft',mode:'auto'});save();applyTheme();render();toast('Design zurückgesetzt');break}
     case'toggle-laden':{const k=b.dataset.v,l=S.settings.laeden;if(l.includes(k)){if(l.length===1){toast('Mindestens ein Laden');break}S.settings.laeden=l.filter(x=>x!==k)}else S.settings.laeden=Object.keys(LAEDEN).filter(x=>x===k||l.includes(x));
       if(!S.settings.laeden.includes(S.settings.einkaufLaden))S.settings.einkaufLaden='alle';if(!S.settings.laeden.includes(S.settings.angLaden))S.settings.angLaden='alle';save();render();break}
     case'connect':{const tk=val('tokenIn').replace(/\s+/g,''),repo=DEFAULT_REPO;if(!tk){toast('Bitte den Zugangscode eingeben');break}
@@ -1032,9 +1080,12 @@ document.addEventListener('input',e=>{
   if(e.target.id==='addName'){suggQ=e.target.value;showSugg()}
   if(e.target.id==='patOp'){S.settings.patOp=+e.target.value;save();applyTheme()}
   if(e.target.id==='accentPick'){S.settings.accent=e.target.value;save();applyTheme()}
+  if(e.target.id==='bgPick'){S.settings.bg=e.target.value;save();applyTheme()}
+  if(e.target.id==='patPick'){S.settings.patCol=e.target.value;save();applyTheme()}
+  if(e.target.id==='patSize'){S.settings.patSize=+e.target.value;save();applyTheme()}
 });
 document.addEventListener('change',e=>{
-  if(e.target.id==='accentPick')render();
+  if(['accentPick','bgPick','patPick','patSize'].includes(e.target.id))render();
   if(e.target.id==='importIn'&&e.target.files[0]){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.einkauf))throw 0;const tk=S.settings.token,repo=S.settings.repo;S=Object.assign({},DEF,d);S.settings=Object.assign({},DEF.settings,d.settings||{},{token:tk,repo});save();applyTheme();render();toast('Wiederhergestellt')}catch(err){toast('Diese Datei passt nicht')}};r.readAsText(e.target.files[0])}
 });
 document.addEventListener('focusin',e=>{if(e.target.id==='addName')showSugg()});
