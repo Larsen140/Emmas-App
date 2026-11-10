@@ -240,8 +240,8 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.5';
-const BUILD='2026-11-10-2115'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='1.6';
+const BUILD='2026-11-10-2130'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -258,6 +258,10 @@ const PATTERNS={keine:'Keine',punkte:'Punkte',karo:'Karo',streifen:'Streifen',he
 const SWATCH=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0','#d9805f','#3b2a1e'];
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.6',d:'10.11.2026',t:'Normalpreise per KI',items:[
+    ['Neu','Gemini sucht mit Google die Normalpreise bei Aldi, Lidl, HIT, Edeka, REWE und Rossmann.'],
+    ['Neu','KI-Preise sind gekennzeichnet und haben einen Link zur Quelle. Unplausible Preise werden aussortiert.'],
+    ['Neu','Erst kommen die Angebote, kurz danach die Normalpreise.']]},
   {v:'1.5',d:'10.11.2026',t:'Schneller suchen',items:[
     ['Besser','Neue Produkte werden schneller gesucht: Nur das Neue wird gesucht, und die App schaut alle paar Sekunden nach.'],
     ['Neu','Die App läuft nur noch vom Home-Bildschirm aus.']]},
@@ -388,7 +392,10 @@ async function loadRemote(quiet){
   try{
     const [m,a]=await Promise.all([GH.readJson('merkliste.json'),GH.readJson('angebote.json')]);
     S.merkliste=m.data;S.angebote=a.data;save();
-    if(searching&&a.data.aktualisiert&&new Date(a.data.aktualisiert).getTime()>searching-60e3){searching=null;toast('Neue Angebote sind da ✿')}
+    const kiLaeuft=a.data.ki&&a.data.ki.status==='läuft';
+    if(searching&&a.data.aktualisiert&&new Date(a.data.aktualisiert).getTime()>searching-60e3){
+      if(!kiLaeuft){searching=null;toast('Alle Preise sind da ✿')}
+      else if(!firstShown){firstShown=true;toast('Angebote sind da – Normalpreise kommen gleich')}}
     setSync('ok');
   }catch(e){setSync('fehler');if(!quiet)toast(ghError(e))}
   if(['angebote','einkauf'].includes(tab))render();
@@ -405,9 +412,9 @@ async function editMerkliste(fn,msg){
   }
   toast('Speichern hat nicht geklappt, bitte nochmal');return false;
 }
-let pollT;
+let pollT,firstShown=false;
 function startPolling(){
-  searching=Date.now();
+  searching=Date.now();firstShown=false;
   const tick=()=>{if(!searching)return;const age=Date.now()-searching;
     if(age>8*60e3){searching=null;toast('Suche dauert länger – schau später nochmal rein');render();return}
     loadRemote(true).finally(()=>{pollT=setTimeout(tick,age<3*60e3?4e3:15e3)})};
@@ -465,7 +472,7 @@ function effPrice(it){
   const ty=e&&e.typisch,drog=['dm','rossmann'].includes(it.laden);
   const typ=ty?(ty.preis??((drog?ty.drogerie:ty.lebensmittel)||ty.lebensmittel||ty.drogerie||{}).preis??null):null;
   if(w&&w.laden===it.laden&&(w.normal||!w.bis||w.bis>=t)){
-    if(w.normal)return {preis:w.preis,normal:w.preis,deal:null,titel:w.titel,quelle:'gewählt'};
+    if(w.normal)return {preis:w.preis,normal:w.preis,deal:null,titel:w.titel,quelle:'gewählt',ki:!!w.ki};
     const n=candidates(it).find(o=>o.normal);
     return {preis:w.preis,normal:w.alterPreis||(n&&n.preis)||null,deal:{preis:w.preis,bis:w.bis},titel:w.titel,quelle:'gewählt'};
   }
@@ -473,7 +480,7 @@ function effPrice(it){
   if(it.preis!=null)return {preis:it.preis,normal:it.preis,deal:null,quelle:'eigen'};
   const c=candidates(it),off=c.find(o=>!o.normal),nor=c.find(o=>o.normal);
   if(off&&(!nor||c.indexOf(off)<c.indexOf(nor)))return {preis:off.preis,normal:off.alterPreis||(nor&&nor.preis)||null,deal:{preis:off.preis,bis:off.bis},titel:off.titel,quelle:'auto'};
-  if(nor)return {preis:nor.preis,normal:nor.preis,deal:null,titel:nor.titel,quelle:'auto'};
+  if(nor)return {preis:nor.preis,normal:nor.preis,deal:null,titel:nor.titel,quelle:'auto',ki:!!nor.ki};
   if(typ!=null)return {preis:typ,normal:typ,deal:null,est:true,quelle:'schätzung'};
   return {preis:null,normal:null,deal:null};
 }
@@ -531,7 +538,7 @@ function vEinkauf(){
   const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="row ${it.done?'done':''}">
     <button class="check ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
     <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
-      <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
+      <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${p.ki?'<span class="tag acc">KI-Preis</span>':''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
     <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:(pending(it)&&!it.done?`<span class="muted small" style="display:inline-flex;gap:6px;align-items:center"><span class="spin"></span>sucht…</span>`:`<span class="muted small">kein Preis</span>`)}</div></div>`};
   const sum=arr=>arr.reduce((s,it)=>{const p=effPrice(it);return s+(p.preis||0)*qty(it)},0);
   let listHtml='';
@@ -587,7 +594,7 @@ function showSugg(){
   box.innerHTML=list.map((s,i)=>`<button type="button" data-act="pick-sugg" data-i="${i}"><i class="dot" style="background:${s.laden?lcol(s.laden):'var(--muted)'}"></i><span class="nm">${esc(s.name)}<br><small>${esc(s.laden?lname(s.laden):'Ohne Laden')}${s.offer?` · Angebot${s.bis?' bis '+fmtDate(s.bis):''}`:s.normal?' · Normalpreis':' · früher gekauft'}</small></span>${s.preis!=null?`<span class="pr" style="${s.offer?'':'color:var(--text)'}">${eur(s.preis)}</span>`:''}</button>`).join('');
   box._list=list;
 }
-function wahlVon(o){return {laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal}}
+function wahlVon(o){return {laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki}}
 function addItem(name,laden,extra={}){
   name=name.trim();if(!name)return;
   const it={id:uid(),name,produkt:name,menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
@@ -610,7 +617,7 @@ function itemSheet(it){
     <div class="field full"><label for="f-notiz">Notiz</label><input id="f-notiz" placeholder="z. B. Bio, 1 Liter" value="${esc(it.notiz||'')}"></div>
   </div>
   ${now}
-  ${cand.length?`<div class="field"><label>Andere Produkte bei ${esc(lname(it.laden))}</label><div class="card list" style="box-shadow:none">${cand.map((o,i)=>{const on=p.titel===o.titel&&p.preis===o.preis;return `<div class="offer"><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${o.normal?'Normalpreis':'Angebot'+(o.bis?' bis '+fmtDate(o.bis):'')}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div><div class="pr"><b style="font-size:17px;${o.normal?'color:var(--text)':''}">${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>${on?`<span class="tag acc">gewählt</span>`:`<button class="btn ghost sm" data-act="use-offer" data-id="${it.id}" data-i="${i}">Nehmen</button>`}</div>`}).join('')}</div></div>`:''}
+  ${cand.length?`<div class="field"><label>Andere Produkte bei ${esc(lname(it.laden))}</label><div class="card list" style="box-shadow:none">${cand.map((o,i)=>{const on=p.titel===o.titel&&p.preis===o.preis;return `<div class="offer"><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${o.normal?(o.ki?'Normalpreis (KI)':'Normalpreis'):'Angebot'+(o.bis?' bis '+fmtDate(o.bis):'')}${o.ki?` · <a href="${esc(o.quelle)}" target="_blank" rel="noopener" style="color:inherit">Quelle${o.info?' · '+esc(o.info):''} ↗</a>`:''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div><div class="pr"><b style="font-size:17px;${o.normal?'color:var(--text)':''}">${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>${on?`<span class="tag acc">gewählt</span>`:`<button class="btn ghost sm" data-act="use-offer" data-id="${it.id}" data-i="${i}">Nehmen</button>`}</div>`}).join('')}</div></div>`:''}
   ${w||it.preis!=null||it.angebotPreis!=null?`<button class="btn ghost sm" style="align-self:flex-start" data-act="auto-price" data-id="${it.id}">${ic('refresh')}Wieder automatisch wählen</button>`:''}
   <div class="sheet-actions"><button class="btn danger" data-act="del-item" data-id="${it.id}">${ic('trash')}Löschen</button><button class="btn" data-act="save-item" data-id="${it.id}">Fertig</button></div>`);
   sheetData.offers=cand;
@@ -626,7 +633,7 @@ function vAngebote(){
   const status=searching?`<div class="card banner"><span class="spin"></span><span class="grow"><b>Suche läuft…</b> Die neuen Preise erscheinen in ein paar Minuten von selbst.</span></div>`
     :a&&a.status==='fehler'?`<div class="card banner"><span class="tag bad">Problem</span><span class="grow">Die letzte Suche hat nicht geklappt. Gezeigt werden die letzten gefundenen Angebote. Sag Larsen Bescheid, falls das länger so bleibt.</span></div>`:'';
   const watchHtml=`<div class="card pad sec"><h3 class="mt0" style="margin:0">Merkliste</h3>
-    <p class="note">Für diese Produkte werden Angebote und Normalpreise gesucht: sofort beim Hinzufügen und jeden Montag um 6 Uhr. Normalpreise kommen von dm und REWE. Für Läden ohne Online-Preise zeigt die App einen ungefähren Preis.</p>
+    <p class="note">Für diese Produkte werden Angebote und Normalpreise gesucht: sofort beim Hinzufügen und jeden Montag um 6 Uhr. Normalpreise kommen von dm und per KI (Gemini mit Google-Suche) für die anderen Läden. Wo nichts belegbar ist, zeigt die App einen ungefähren Preis.</p>
     <form class="addbar" data-form="add-watch" style="padding:4px 4px 4px 12px;border:1px solid var(--line);border-radius:16px" autocomplete="off">${ic('plus')}<input id="watchName" placeholder="z. B. Nutella, Kaffee, Zahnpasta" enterkeyhint="done" aria-label="Produkt für die Merkliste"><button class="btn sm" type="submit">Hinzufügen</button></form>
     ${watch.length?`<div class="chips" style="flex-wrap:wrap">${watch.map(n=>`<span class="chip" style="cursor:default">${esc(n)}<button class="icon-btn" style="width:22px;height:22px" data-act="unwatch" data-name="${esc(n)}" aria-label="${esc(n)} entfernen">${ic('x')}</button></span>`).join('')}</div>`:'<p class="note">Noch leer.</p>'}
     <div class="flex"><button class="btn ghost sm" data-act="search-now" ${searching?'disabled':''}>${ic('refresh')}Jetzt suchen</button><button class="btn ghost sm" data-act="reload">Neu laden</button></div></div>`;
@@ -641,7 +648,7 @@ function vAngebote(){
         <div class="pr"><b>${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="a" data-i="${p.angebote.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`}).join('')
       :`<div class="offer"><div class="body"><div class="m">Diese Woche kein Angebot${sel!=='alle'?' bei '+esc(lname(sel)):''}.</div></div></div>`}
-      ${(()=>{const np=(p.normalpreise||[]).filter(o=>(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden));return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
+      ${(()=>{const np=(p.normalpreise||[]).filter(o=>(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden));return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.ki?` · <a href="${esc(o.quelle)}" target="_blank" rel="noopener" style="color:inherit">KI-Preis${o.info?' · '+esc(o.info):''} ↗</a>`:''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
         <div class="pr"><b style="color:var(--text)">${eur(o.preis)}</b></div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="n" data-i="${p.normalpreise.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`).join('')}`:''})()}</div>`}).join('');
   }
