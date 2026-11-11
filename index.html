@@ -329,8 +329,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.2';
-const BUILD='2026-11-11-1445'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.2.1';
+const BUILD='2026-11-11-1810'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -354,6 +354,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.2.1',d:'11.11.2026',t:'Fehler behoben',items:[
+    ['Besser','Termine und To-dos von zwei verschiedenen iPhones überschreiben sich nicht mehr gegenseitig. Jedes Gerät bekommt seine eigenen Erinnerungen.'],
+    ['Besser','Wenn das iPhone die Anmeldung für Mitteilungen erneuert, meldet sich die App automatisch neu an.']]},
   {v:'2.2',d:'11.11.2026',t:'Push-Benachrichtigungen',items:[
     ['Neu','Erinnerungen etwa 1 Stunde vor Terminen.'],
     ['Neu','Morgens eine Übersicht: Termine von heute und fällige To-dos.'],
@@ -453,7 +456,7 @@ const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
-S=Object.assign({},DEF,{haeufig:{}},S);S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
+S=Object.assign({},DEF,{haeufig:{}},S);if(!S.deviceId)S.deviceId=uid()+uid();S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
 let saveT;
 function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}if(typeof syncPlan==='function')syncPlan()}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
@@ -570,14 +573,18 @@ const planHash=()=>JSON.stringify([S.termine,S.todos.map(t=>[t.id,t.text,t.due,t
 function syncPlan(now){
   if(!GH.on)return;if(S.planSynced===planHash())return;
   clearTimeout(planT);planT=setTimeout(async()=>{if(planBusy){syncPlan();return}planBusy=true;const h=planHash();
-    try{await editFile('plan.json',d=>{d.termine=S.termine.map(e=>({id:e.id,title:e.title,date:e.date,time:e.time||'',rep:e.rep||'',ort:e.ort||''}));d.todos=S.todos.map(t=>({id:t.id,text:t.text,due:t.due||null,done:!!t.done,prio:t.prio||1}));d.aktualisiert=new Date().toISOString()},'Termine und To-dos aktualisiert',{termine:[],todos:[]});
+    try{await editFile('plan.json',d=>{
+        // jedes Gerät hat seinen eigenen Bereich, damit sich zwei iPhones nicht gegenseitig überschreiben
+        delete d.termine;delete d.todos;d.geraete=d.geraete||{};
+        d.geraete[S.deviceId]={termine:S.termine.map(e=>({id:e.id,title:e.title,date:e.date,time:e.time||'',rep:e.rep||'',ort:e.ort||''})),todos:S.todos.map(t=>({id:t.id,text:t.text,due:t.due||null,done:!!t.done,prio:t.prio||1})),aktualisiert:new Date().toISOString()};
+        d.aktualisiert=new Date().toISOString()},'Termine und To-dos aktualisiert',{geraete:{}});
       S.planSynced=h;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}catch(e){}finally{planBusy=false}},now?50:2500);
 }
 /* ---------- Push-Benachrichtigungen ---------- */
 const VAPID_PUB='BCqls3y6UAiZGOOFz--Aq0y69bUHUbRmMw0Cxb-PgLFImtybuM_u5B675kjY8E_qLQUZzDbnKP5jLcXhI7c3LJs';
 const PUSH_OK=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
 const b64u=s=>{const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))};
-async function pushEnable(btn){
+async function pushEnable(btn,quiet){
   if(!PUSH_OK){toast('Benachrichtigungen gehen nur in der App vom Home-Bildschirm (iOS 16.4 oder neuer)',5000);return}
   if(!GH.on){toast('Erst unten mit dem Zugangscode verbinden',4000);return}
   const perm=await Notification.requestPermission();
@@ -588,10 +595,19 @@ async function pushEnable(btn){
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
     const j=sub.toJSON(),prefs=(S.push&&S.push.prefs)||{updates:true,termine:true,todos:true};
-    await editFile('push.json',d=>{d.abos=(d.abos||[]).filter(a=>a.sub&&a.sub.endpoint!==j.endpoint);d.abos.push({sub:{endpoint:j.endpoint,keys:j.keys},prefs,geraet:IPAD?'iPad':IOS?'iPhone':'Gerät',seit:new Date().toISOString()})},'Benachrichtigungen eingeschaltet',{abos:[]});
-    S.push={on:true,endpoint:j.endpoint,prefs};save();syncPlan(true);toast('Eingeschaltet ✿ Gleich kommt eine Begrüßung.',4000);
-  }catch(e){toast(e.status?ghError(e):'Einschalten hat nicht geklappt: '+(e.message||e),6000)}
+    await editFile('push.json',d=>{d.abos=(d.abos||[]).filter(a=>a.sub&&a.sub.endpoint!==j.endpoint&&a.geraet_id!==S.deviceId);d.abos.push({sub:{endpoint:j.endpoint,keys:j.keys},prefs,geraet:IPAD?'iPad':IOS?'iPhone':'Gerät',geraet_id:S.deviceId,seit:new Date().toISOString()})},'Benachrichtigungen eingeschaltet',{abos:[]});
+    S.planSynced=null;
+    S.push={on:true,endpoint:j.endpoint,prefs,idSet:true};save();syncPlan(true);if(!quiet)toast('Eingeschaltet ✿ Gleich kommt eine Begrüßung.',4000);
+  }catch(e){if(!quiet)toast(e.status?ghError(e):'Einschalten hat nicht geklappt: '+(e.message||e),6000)}
   render();
+}
+// Beim Start prüfen: gibt es die Push-Anmeldung noch? (iOS kann sie erneuern) – sonst neu anmelden
+async function pushCheck(){
+  if(!(STANDALONE&&PUSH_OK&&GH.on&&Notification.permission==='granted'))return;
+  try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();
+    if(!S.push||!S.push.on||!sub||sub.endpoint!==S.push.endpoint){await pushEnable(null,true);return}
+    if(!S.push.idSet){const ok=await pushUpdate(a=>{a.geraet_id=S.deviceId},'Benachrichtigungen: Geräte-ID');if(ok){S.push.idSet=true;S.planSynced=null;save()}}
+  }catch(_){}
 }
 async function pushUpdate(fn,msg){
   if(!S.push||!S.push.endpoint)return;
@@ -1318,7 +1334,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 applyTheme();render();
 if(MUST_INSTALL)showInstall();
 else if(mustPush())showPushGate();
-else if(STANDALONE&&PUSH_OK&&GH.on&&!(S.push&&S.push.on))setTimeout(()=>pushEnable(),2500);
+else setTimeout(pushCheck,2500);
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{try{const u=new URL(e.data&&e.data.open);const t=u.searchParams.get('tab');if(t)go(t)}catch(_){}});
 if(GH.on&&!MUST_INSTALL)setTimeout(()=>syncPlan(true),3000);
 if(GH.on&&!MUST_INSTALL){setSync('laden');lastLoad=Date.now();loadRemote(true)}
