@@ -329,8 +329,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.2.1';
-const BUILD='2026-11-11-1810'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.3';
+const BUILD='2026-11-11-1830'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -354,6 +354,10 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.3',d:'11.11.2026',t:'Gemeinsam nutzen',items:[
+    ['Neu','Einkaufsliste, Termine und To-dos sind jetzt auf beiden iPhones gleich. Was einer hinzufügt, abhakt oder löscht, sieht der andere nach ein paar Sekunden.'],
+    ['Neu','Die Erinnerungen bekommt ihr beide für die gemeinsamen Termine und To-dos.'],
+    ['Info','Farben, Muster und Design bleiben auf jedem iPhone so, wie ihr sie eingestellt habt.']]},
   {v:'2.2.1',d:'11.11.2026',t:'Fehler behoben',items:[
     ['Besser','Termine und To-dos von zwei verschiedenen iPhones überschreiben sich nicht mehr gegenseitig. Jedes Gerät bekommt seine eigenen Erinnerungen.'],
     ['Besser','Wenn das iPhone die Anmeldung für Mitteilungen erneuert, meldet sich die App automatisch neu an.']]},
@@ -567,19 +571,61 @@ async function editFile(file,fn,msg,leer){
   }
   throw new Error('Konflikt');
 }
-/* ---------- Termine & To-dos ins Daten-Repo spiegeln (für Erinnerungen) ---------- */
-let planT,planBusy=false;
-const planHash=()=>JSON.stringify([S.termine,S.todos.map(t=>[t.id,t.text,t.due,t.done,t.prio])]);
-function syncPlan(now){
-  if(!GH.on)return;if(S.planSynced===planHash())return;
-  clearTimeout(planT);planT=setTimeout(async()=>{if(planBusy){syncPlan();return}planBusy=true;const h=planHash();
-    try{await editFile('plan.json',d=>{
-        // jedes Gerät hat seinen eigenen Bereich, damit sich zwei iPhones nicht gegenseitig überschreiben
-        delete d.termine;delete d.todos;d.geraete=d.geraete||{};
-        d.geraete[S.deviceId]={termine:S.termine.map(e=>({id:e.id,title:e.title,date:e.date,time:e.time||'',rep:e.rep||'',ort:e.ort||''})),todos:S.todos.map(t=>({id:t.id,text:t.text,due:t.due||null,done:!!t.done,prio:t.prio||1})),aktualisiert:new Date().toISOString()};
-        d.aktualisiert=new Date().toISOString()},'Termine und To-dos aktualisiert',{geraete:{}});
-      S.planSynced=h;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}catch(e){}finally{planBusy=false}},now?50:2500);
+/* ---------- Gemeinsame Daten: beide iPhones sehen dieselbe Einkaufsliste, Termine und To-dos ---------- */
+// Liegt als gemeinsam.json im privaten Daten-Repo. Pro Eintrag gewinnt die neueste Änderung (u = Zeitstempel),
+// Löschungen werden als "del" gemerkt, damit sie beim anderen Gerät auch verschwinden.
+const SYNC_COLLS=['einkauf','termine','todos'];
+let syncT,syncBusy=false,syncAgain=false,lastPull=0,renderLater=false;
+const itemHash=o=>{const c={...o};delete c.u;return JSON.stringify(c)};
+function localChanges(mark){
+  const now=Date.now(),base=S.syncBase||{};let changed=false;S.syncTomb=S.syncTomb||{};
+  for(const c of SYNC_COLLS){const b=base[c]||{},ids=new Set();
+    for(const it of S[c]){ids.add(it.id);if(b[it.id]!==itemHash(it)){changed=true;if(mark)it.u=now}}
+    for(const id of Object.keys(b))if(!ids.has(id)){changed=true;if(mark){S.syncTomb[c]=S.syncTomb[c]||{};S.syncTomb[c][id]=now}}}
+  return changed;
 }
+function mergeShared(remote){
+  const out={},alt=Date.now()-30*864e5;
+  for(const c of SYNC_COLLS){
+    const r=(remote&&remote[c])||{},m=new Map();
+    for(const it of r.items||[])m.set(it.id,it);
+    for(const it of S[c]){const x=m.get(it.id);if(!x||(it.u||0)>(x.u||0))m.set(it.id,it)}
+    const del={...(r.del||{})};for(const [id,t] of Object.entries((S.syncTomb||{})[c]||{}))if(!(del[id]>=t))del[id]=t;
+    for(const [id,t] of Object.entries(del)){const x=m.get(id);if(x&&(x.u||0)<=t)m.delete(id);if(t<alt)delete del[id]}
+    const items=[...m.values()];if(c==='einkauf')items.sort((a,b)=>(b.added||0)-(a.added||0));
+    out[c]={items,del};
+  }
+  return out;
+}
+async function syncShared(){
+  if(!GH.on)return;if(syncBusy){syncAgain=true;return}syncBusy=true;
+  try{
+    for(let i=0;i<3;i++){
+      localChanges(true);
+      const snap=JSON.stringify(SYNC_COLLS.map(c=>S[c]));
+      let remote=null,sha;try{const r=await GH.readJson('gemeinsam.json');remote=r.data;sha=r.sha}catch(e){if(e.status!==404)throw e}
+      const merged=mergeShared(remote);
+      const before=snap;
+      if(JSON.stringify(SYNC_COLLS.map(c=>remote&&remote[c]))!==JSON.stringify(SYNC_COLLS.map(c=>merged[c]))){
+        try{await GH.writeJson('gemeinsam.json',{...merged,aktualisiert:new Date().toISOString()},sha,'Gemeinsame Liste aktualisiert')}
+        catch(e){if(e.status===409||e.status===422)continue;throw e}
+      }
+      if(JSON.stringify(SYNC_COLLS.map(c=>S[c]))!==snap){syncAgain=true;break} // während des Speicherns wurde lokal weiter geändert
+      for(const c of SYNC_COLLS)S[c]=merged[c].items;
+      S.syncTomb={};S.syncBase=Object.fromEntries(SYNC_COLLS.map(c=>[c,Object.fromEntries(S[c].map(it=>[it.id,itemHash(it)]))]));
+      try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}
+      lastPull=Date.now();
+      if(JSON.stringify(SYNC_COLLS.map(c=>S[c]))!==before)softRender();
+      break;
+    }
+  }catch(e){}finally{syncBusy=false;if(syncAgain){syncAgain=false;syncPlan()}}
+}
+// Neu zeichnen, ohne Emma beim Tippen zu stören
+function softRender(){const a=document.activeElement;if(document.querySelector('.scrim:not(.closing)')||(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName))){renderLater=true;return}render()}
+document.addEventListener('focusout',()=>setTimeout(()=>{if(renderLater&&!document.querySelector('.scrim:not(.closing)')){const a=document.activeElement;if(!(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName))){renderLater=false;render()}}},300));
+function syncPlan(now){if(!GH.on)return;if(!now&&!localChanges(false)&&Date.now()-lastPull<15e3)return;clearTimeout(syncT);syncT=setTimeout(syncShared,now?50:1200)}
+setInterval(()=>{if(GH.on&&document.visibilityState==='visible'&&Date.now()-lastPull>15e3)syncShared()},5e3);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncPlan(true)});
 /* ---------- Push-Benachrichtigungen ---------- */
 const VAPID_PUB='BCqls3y6UAiZGOOFz--Aq0y69bUHUbRmMw0Cxb-PgLFImtybuM_u5B675kjY8E_qLQUZzDbnKP5jLcXhI7c3LJs';
 const PUSH_OK=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
@@ -596,7 +642,6 @@ async function pushEnable(btn,quiet){
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
     const j=sub.toJSON(),prefs=(S.push&&S.push.prefs)||{updates:true,termine:true,todos:true};
     await editFile('push.json',d=>{d.abos=(d.abos||[]).filter(a=>a.sub&&a.sub.endpoint!==j.endpoint&&a.geraet_id!==S.deviceId);d.abos.push({sub:{endpoint:j.endpoint,keys:j.keys},prefs,geraet:IPAD?'iPad':IOS?'iPhone':'Gerät',geraet_id:S.deviceId,seit:new Date().toISOString()})},'Benachrichtigungen eingeschaltet',{abos:[]});
-    S.planSynced=null;
     S.push={on:true,endpoint:j.endpoint,prefs,idSet:true};save();syncPlan(true);if(!quiet)toast('Eingeschaltet ✿ Gleich kommt eine Begrüßung.',4000);
   }catch(e){if(!quiet)toast(e.status?ghError(e):'Einschalten hat nicht geklappt: '+(e.message||e),6000)}
   render();
@@ -606,7 +651,7 @@ async function pushCheck(){
   if(!(STANDALONE&&PUSH_OK&&GH.on&&Notification.permission==='granted'))return;
   try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();
     if(!S.push||!S.push.on||!sub||sub.endpoint!==S.push.endpoint){await pushEnable(null,true);return}
-    if(!S.push.idSet){const ok=await pushUpdate(a=>{a.geraet_id=S.deviceId},'Benachrichtigungen: Geräte-ID');if(ok){S.push.idSet=true;S.planSynced=null;save()}}
+    if(!S.push.idSet){const ok=await pushUpdate(a=>{a.geraet_id=S.deviceId},'Benachrichtigungen: Geräte-ID');if(ok){S.push.idSet=true;save()}}
   }catch(_){}
 }
 async function pushUpdate(fn,msg){
@@ -1336,7 +1381,7 @@ if(MUST_INSTALL)showInstall();
 else if(mustPush())showPushGate();
 else setTimeout(pushCheck,2500);
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{try{const u=new URL(e.data&&e.data.open);const t=u.searchParams.get('tab');if(t)go(t)}catch(_){}});
-if(GH.on&&!MUST_INSTALL)setTimeout(()=>syncPlan(true),3000);
+if(GH.on&&!MUST_INSTALL)setTimeout(()=>syncPlan(true),800);
 if(GH.on&&!MUST_INSTALL){setSync('laden');lastLoad=Date.now();loadRemote(true)}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 /* Schnelle Updates: beim Öffnen, beim Zurückkehren und alle 2 Minuten nach einer neuen Version schauen */
