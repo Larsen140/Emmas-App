@@ -330,7 +330,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='2.3';
-const BUILD='2026-11-11-1835'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-11-1840'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -623,6 +623,19 @@ document.addEventListener('focusout',()=>setTimeout(()=>{if(renderLater&&!docume
 function syncPlan(now){if(!GH.on)return;if(!now&&!localChanges(false)&&Date.now()-lastPull<15e3)return;clearTimeout(syncT);syncT=setTimeout(syncShared,now?50:1200)}
 setInterval(()=>{if(GH.on&&document.visibilityState==='visible'&&Date.now()-lastPull>15e3)syncShared()},5e3);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncPlan(true)});
+/* ---------- Wecker: läuft die stündliche Erinnerungs-Prüfung nicht, stößt die App sie an ---------- */
+async function wecker(){
+  if(!GH.on)return;const h=new Date().getHours();if(h<6||h>=23)return;
+  let last=0;try{last=+localStorage.getItem(KEY+'-wecker')||0}catch(_){}
+  if(Date.now()-last<20*60e3)return;
+  try{localStorage.setItem(KEY+'-wecker',String(Date.now()))}catch(_){}
+  try{
+    let lauf=null;try{lauf=(await GH.readJson('push-status.json')).data.lauf}catch(e){if(e.status!==404)return}
+    if(lauf&&Date.now()-new Date(lauf).getTime()<65*60e3)return;
+    await editFile('wecker.json',d=>{d.zeit=new Date().toISOString()},'Wecker: Erinnerungen prüfen',{});
+  }catch(_){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')setTimeout(wecker,4000)});
 /* ---------- Push-Benachrichtigungen ---------- */
 const VAPID_PUB='BCqls3y6UAiZGOOFz--Aq0y69bUHUbRmMw0Cxb-PgLFImtybuM_u5B675kjY8E_qLQUZzDbnKP5jLcXhI7c3LJs';
 const PUSH_OK=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
@@ -1379,6 +1392,7 @@ else if(mustPush())showPushGate();
 else setTimeout(pushCheck,2500);
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{try{const u=new URL(e.data&&e.data.open);const t=u.searchParams.get('tab');if(t)go(t)}catch(_){}});
 if(GH.on&&!MUST_INSTALL)setTimeout(()=>syncPlan(true),800);
+if(GH.on&&!MUST_INSTALL)setTimeout(wecker,5000);
 if(GH.on&&!MUST_INSTALL){setSync('laden');lastLoad=Date.now();loadRemote(true)}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 /* Schnelle Updates: beim Öffnen, beim Zurückkehren und alle 2 Minuten nach einer neuen Version schauen */
