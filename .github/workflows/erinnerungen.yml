@@ -5,7 +5,7 @@ name: Erinnerungen
 
 on:
   schedule:
-    - cron: '2-59/5 * * * *'
+    - cron: '3-59/5 * * * *'
   push:
     branches: [main]
     paths: ['index.html']   # neue Version -> Update-Mitteilung
