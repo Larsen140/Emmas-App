@@ -330,7 +330,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='2.3';
-const BUILD='2026-11-11-1830'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-11-1825'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -354,13 +354,12 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
-  {v:'2.3',d:'11.11.2026',t:'Gemeinsam nutzen',items:[
-    ['Neu','Einkaufsliste, Termine und To-dos sind jetzt auf beiden iPhones gleich. Was einer hinzufügt, abhakt oder löscht, sieht der andere nach ein paar Sekunden.'],
-    ['Neu','Die Erinnerungen bekommt ihr beide für die gemeinsamen Termine und To-dos.'],
-    ['Info','Farben, Muster und Design bleiben auf jedem iPhone so, wie ihr sie eingestellt habt.']]},
-  {v:'2.2.1',d:'11.11.2026',t:'Fehler behoben',items:[
-    ['Besser','Termine und To-dos von zwei verschiedenen iPhones überschreiben sich nicht mehr gegenseitig. Jedes Gerät bekommt seine eigenen Erinnerungen.'],
-    ['Besser','Wenn das iPhone die Anmeldung für Mitteilungen erneuert, meldet sich die App automatisch neu an.']]},
+  {v:'2.3',d:'11.11.2026',t:'Zwei iPhones, eine App 💑',items:[
+    ['Neu','Emmas Planner läuft jetzt auf zwei iPhones gleichzeitig: Einkaufsliste, Termine und To-dos sind auf beiden immer gleich.'],
+    ['Neu','Was einer hinzufügt, abhakt oder löscht, sieht der andere nach ein paar Sekunden. Ändert ihr gleichzeitig etwas, geht nichts verloren.'],
+    ['Neu','Erinnerungen an Termine und die Morgen-Übersicht bekommt ihr beide aufs iPhone.'],
+    ['Besser','Wenn ein iPhone die Anmeldung für Mitteilungen erneuert, meldet sich die App von selbst wieder an.'],
+    ['Info','Farben, Muster und welche Mitteilungen ihr wollt, stellt jeder auf seinem iPhone selbst ein.']]},
   {v:'2.2',d:'11.11.2026',t:'Push-Benachrichtigungen',items:[
     ['Neu','Erinnerungen etwa 1 Stunde vor Terminen.'],
     ['Neu','Morgens eine Übersicht: Termine von heute und fällige To-dos.'],
