@@ -329,8 +329,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.1';
-const BUILD='2026-11-11-1430'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.2';
+const BUILD='2026-11-11-1445'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -354,6 +354,11 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.2',d:'11.11.2026',t:'Push-Benachrichtigungen',items:[
+    ['Neu','Erinnerungen etwa 1 Stunde vor Terminen.'],
+    ['Neu','Morgens eine Übersicht: Termine von heute und fällige To-dos.'],
+    ['Neu','Hinweis, wenn es eine neue Version der App gibt.'],
+    ['Neu','Beim Öffnen fragt die App nach der Erlaubnis für Mitteilungen. Unter Optionen lässt sich jede Art einzeln an- und ausschalten.']]},
   {v:'2.1',d:'11.11.2026',t:'Scannen und sofort Preise',items:[
     ['Neu','Nach dem Scannen sucht die App sofort Angebote und Preise. Bei dm findet sie über den Strichcode genau dein Produkt.'],
     ['Neu','Ohne gewählten Laden zeigt die App, wo es gerade am günstigsten ist.']]},
@@ -450,7 +455,7 @@ let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
 S=Object.assign({},DEF,{haeufig:{}},S);S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
 let saveT;
-function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}}
+function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}if(typeof syncPlan==='function')syncPlan()}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
 if(!S.welcome){
   S.welcome=true;
@@ -549,6 +554,53 @@ async function loadRemote(quiet){
     setSync('ok');
   }catch(e){setSync('fehler');if(!quiet)toast(ghError(e))}
   if(['angebote','einkauf'].includes(tab))render();
+}
+async function editFile(file,fn,msg,leer){
+  for(let i=0;i<3;i++){
+    try{
+      let data,sha;try{const r=await GH.readJson(file);data=r.data;sha=r.sha}catch(e){if(e.status!==404)throw e;data=JSON.parse(JSON.stringify(leer));sha=undefined}
+      fn(data);await GH.writeJson(file,data,sha,msg);return data;
+    }catch(e){if(e.status!==409&&e.status!==422)throw e}
+  }
+  throw new Error('Konflikt');
+}
+/* ---------- Termine & To-dos ins Daten-Repo spiegeln (für Erinnerungen) ---------- */
+let planT,planBusy=false;
+const planHash=()=>JSON.stringify([S.termine,S.todos.map(t=>[t.id,t.text,t.due,t.done,t.prio])]);
+function syncPlan(now){
+  if(!GH.on)return;if(S.planSynced===planHash())return;
+  clearTimeout(planT);planT=setTimeout(async()=>{if(planBusy){syncPlan();return}planBusy=true;const h=planHash();
+    try{await editFile('plan.json',d=>{d.termine=S.termine.map(e=>({id:e.id,title:e.title,date:e.date,time:e.time||'',rep:e.rep||'',ort:e.ort||''}));d.todos=S.todos.map(t=>({id:t.id,text:t.text,due:t.due||null,done:!!t.done,prio:t.prio||1}));d.aktualisiert=new Date().toISOString()},'Termine und To-dos aktualisiert',{termine:[],todos:[]});
+      S.planSynced=h;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}catch(e){}finally{planBusy=false}},now?50:2500);
+}
+/* ---------- Push-Benachrichtigungen ---------- */
+const VAPID_PUB='BCqls3y6UAiZGOOFz--Aq0y69bUHUbRmMw0Cxb-PgLFImtybuM_u5B675kjY8E_qLQUZzDbnKP5jLcXhI7c3LJs';
+const PUSH_OK=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+const b64u=s=>{const p='='.repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,c=>c.charCodeAt(0))};
+async function pushEnable(btn){
+  if(!PUSH_OK){toast('Benachrichtigungen gehen nur in der App vom Home-Bildschirm (iOS 16.4 oder neuer)',5000);return}
+  if(!GH.on){toast('Erst unten mit dem Zugangscode verbinden',4000);return}
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted'){toast('Nicht erlaubt. Du kannst es in den iPhone-Einstellungen bei „Emmas Planner“ einschalten.',6000);return}
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span>Schalte ein…'}
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
+    const j=sub.toJSON(),prefs=(S.push&&S.push.prefs)||{updates:true,termine:true,todos:true};
+    await editFile('push.json',d=>{d.abos=(d.abos||[]).filter(a=>a.sub&&a.sub.endpoint!==j.endpoint);d.abos.push({sub:{endpoint:j.endpoint,keys:j.keys},prefs,geraet:IPAD?'iPad':IOS?'iPhone':'Gerät',seit:new Date().toISOString()})},'Benachrichtigungen eingeschaltet',{abos:[]});
+    S.push={on:true,endpoint:j.endpoint,prefs};save();syncPlan(true);toast('Eingeschaltet ✿ Gleich kommt eine Begrüßung.',4000);
+  }catch(e){toast(e.status?ghError(e):'Einschalten hat nicht geklappt: '+(e.message||e),6000)}
+  render();
+}
+async function pushUpdate(fn,msg){
+  if(!S.push||!S.push.endpoint)return;
+  try{await editFile('push.json',d=>{const a=(d.abos||[]).find(x=>x.sub&&x.sub.endpoint===S.push.endpoint);if(a)fn(a)},msg,{abos:[]});return true}catch(e){toast(e.status?ghError(e):'Speichern hat nicht geklappt');return false}
+}
+async function pushDisable(){
+  try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();if(sub)await sub.unsubscribe()}catch(_){}
+  if(S.push&&S.push.endpoint&&GH.on){try{await editFile('push.json',d=>{d.abos=(d.abos||[]).filter(a=>a.sub&&a.sub.endpoint!==S.push.endpoint)},'Benachrichtigungen ausgeschaltet',{abos:[]})}catch(_){}}
+  S.push={on:false,prefs:(S.push&&S.push.prefs)||{updates:true,termine:true,todos:true}};save();render();toast('Ausgeschaltet');
 }
 async function editMerkliste(fn,msg){
   if(!GH.on){toast('Erst in den Optionen verbinden');return false}
@@ -651,6 +703,7 @@ const qty=it=>Math.max(1,Number(it.menge)||1);
 /* ---------- Oberfläche ---------- */
 let tab='einkauf';
 try{tab=localStorage.getItem(KEY+'-tab')||'einkauf'}catch(e){}
+try{const q=new URLSearchParams(location.search).get('tab');if(q){tab=q;history.replaceState(null,'',location.pathname)}}catch(e){}
 if(!TABS.some(t=>t[0]===tab))tab='einkauf';
 let calMonth=new Date();calMonth.setDate(1);
 let calSel=todayIso();
@@ -1034,6 +1087,15 @@ function vSettings(){
     <div class="chips" style="flex-wrap:wrap">${Object.keys(LAEDEN).map(k=>`<button class="chip" data-act="toggle-laden" data-v="${k}" aria-pressed="${st.laeden.includes(k)}"><i class="dot" style="background:${lcol(k)}"></i>${esc(lname(k))}</button>`).join('')}</div></div>
   <div class="card pad sec"><h3>Preise automatisch suchen</h3><p class="note">Neue Produkte auf der Einkaufsliste kommen automatisch auf die Merkliste. Die Preise sind dann nach 1–2 Minuten da.</p>
     <div class="seg"><button data-act="set-auto" data-v="1" aria-pressed="${!!st.autoSuche}">An</button><button data-act="set-auto" data-v="" aria-pressed="${!st.autoSuche}">Aus</button></div></div>
+  <div class="card pad sec"><h3>Benachrichtigungen</h3>
+    ${(()=>{const pu=S.push||{},pr=pu.prefs||{updates:true,termine:true,todos:true};
+      if(!PUSH_OK)return `<p class="note">Benachrichtigungen funktionieren nur in der App vom Home-Bildschirm, auf dem iPhone ab iOS 16.4.</p>`;
+      if(!pu.on)return `<p class="note">${GH.on?'Mitteilungen sind noch nicht eingerichtet.':'Verbinde unten den Zugangscode, dann werden die Mitteilungen eingerichtet.'}</p>${GH.on?`<button class="btn" data-act="push-on">${ic('bell')}Jetzt einrichten</button>`:''}`;
+      return `<div class="flex"><span class="tag deal">An</span><span class="muted small">auf diesem ${IPAD?'iPad':IOS?'iPhone':'Gerät'}</span></div>
+        <div class="chips" style="flex-wrap:wrap">${[['termine','📅 Termine'],['todos','✅ To-dos'],['updates','🆕 Updates']].map(([k,l])=>`<button class="chip" data-act="push-pref" data-v="${k}" aria-pressed="${pr[k]!==false}">${l}</button>`).join('')}</div>
+        <p class="note">Termine: etwa 1 Stunde vorher. Morgens zwischen 7 und 11 Uhr: was heute ansteht. Updates: kurz nachdem es eine neue Version gibt.</p>
+        <div class="flex"><button class="btn ghost sm" data-act="push-test">Testnachricht</button></div>`})()}
+  </div>
   <div class="card pad sec"><h3>Verbindung für Angebote</h3>
     ${GH.on?`<div class="flex"><span class="tag ${syncState==='fehler'?'bad':'deal'}">${syncState==='fehler'?'Fehler':'Verbunden'}</span><span class="muted small">${esc(st.repo)}</span></div>
       <p class="note">Dein Zugangscode ist nur auf diesem Gerät gespeichert.</p>
@@ -1095,6 +1157,11 @@ document.addEventListener('click',async e=>{
     case'set-elad':S.settings.einkaufLaden=b.dataset.v;save();render();break;
     case'toggle-item':toggleItem(id,b);break;
     case'scan':openScanner();break;
+    case'push-on':pushEnable(b);break;
+    case'push-gate':{await Notification.requestPermission().catch(()=>'default');updatePushGate();if(Notification.permission==='granted')toast('Danke ✿',2000);break}
+    case'push-off':pushDisable();break;
+    case'push-pref':{const k=b.dataset.v;S.push.prefs=S.push.prefs||{updates:true,termine:true,todos:true};S.push.prefs[k]=S.push.prefs[k]===false;save();render();pushUpdate(a=>{a.prefs=S.push.prefs},'Benachrichtigungen: Einstellungen');break}
+    case'push-test':{b.disabled=true;const ok=await pushUpdate(a=>{a.test=true},'Testnachricht angefordert');if(ok)toast('Die Testnachricht kommt in etwa einer Minute');break}
     case'scan-close':closeScanner();break;
     case'scan-manual':{closeScanner();openSheet(`<div class="sheet-head"><h3>Nummer eintippen</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div><div class="field"><label for="sc-code">Strichcode-Nummer (unter den Strichen)</label><input id="sc-code" inputmode="numeric" pattern="[0-9]*" placeholder="z. B. 4005808262175"></div><div class="sheet-actions"><span></span><button class="btn" data-act="scan-lookup">Suchen</button></div>`);setTimeout(()=>{const f=document.getElementById('sc-code');f&&f.focus()},350);break}
     case'scan-lookup':lookupCode(val('sc-code'));break;
@@ -1167,7 +1234,7 @@ document.addEventListener('click',async e=>{
       const old={...S.settings};S.settings.token=tk;S.settings.repo=repo;
       try{
         try{await GH.req('')}catch(e1){e1.step='repo';throw e1}
-        await GH.readJson('merkliste.json');save();toast('Verbunden ✿');await loadRemote(true);render()}
+        await GH.readJson('merkliste.json');save();toast('Verbunden ✿');await loadRemote(true);render();if(PUSH_OK&&Notification.permission==='granted'&&!(S.push&&S.push.on))pushEnable()}
       catch(err){S.settings.token=old.token;S.settings.repo=old.repo;render();showError(ghError(err))}
       break}
     case'disconnect':if(confirmTwice(b,'Wirklich trennen?')){S.settings.token='';S.merkliste=null;S.angebote=null;save();setSync('');render();toast('Getrennt')}break;
@@ -1227,9 +1294,33 @@ function showInstall(){
   d.querySelector('#instBtn').onclick=async()=>{if(installEvt){installEvt.prompt();installEvt=null}};
 }
 
+/* ---------- Mitteilungen sind Pflicht (nur in der Home-Bildschirm-App) ---------- */
+const mustPush=()=>STANDALONE&&PUSH_OK&&Notification.permission!=='granted';
+function showPushGate(){
+  if(document.querySelector('.install.pushgate'))return updatePushGate();
+  const d=document.createElement('div');d.className='install pushgate';d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+  d.innerHTML=`<div class="install-card"><div class="logo"><span>E</span></div><h2>Mitteilungen erlauben</h2><div id="pgBody"></div></div>`;
+  document.body.appendChild(d);updatePushGate();
+}
+function updatePushGate(){
+  const g=document.querySelector('.install.pushgate');if(!g)return;
+  if(!mustPush()){g.remove();if(GH.on&&!(S.push&&S.push.on))pushEnable();return}
+  const denied=Notification.permission==='denied';
+  g.querySelector('#pgBody').innerHTML=denied?`<p style="margin:0 0 14px;color:var(--muted)">Mitteilungen sind ausgeschaltet. Ohne sie kann Emmas Planner nicht an Termine und To-dos erinnern.</p>
+    <div class="steps card">${[`Öffne die <b>Einstellungen</b> auf deinem ${IPAD?'iPad':'iPhone'}`,`Tippe auf <b>Mitteilungen</b>`,`Wähle <b>Emmas Planner</b>`,`Schalte <b>Mitteilungen erlauben</b> ein`,`Komm zurück in die App`].map((t,i)=>`<div class="step"><span class="n">${i+1}</span><span>${t}</span></div>`).join('')}</div>`
+   :`<p style="margin:0 0 14px;color:var(--muted)">Damit dich Emmas Planner an Termine, fällige To-dos und neue Updates erinnern kann, braucht die App deine Erlaubnis.</p>
+    <div class="steps card">${[['📅','Erinnerung etwa 1 Stunde vor Terminen'],['☀️','Morgens: was heute ansteht'],['🆕','Hinweis auf neue Updates']].map(([e,t])=>`<div class="step"><span class="n" style="background:none;font-size:20px">${e}</span><span>${t}</span></div>`).join('')}</div>
+    <button class="btn" style="margin-top:16px;width:100%" data-act="push-gate">${ic('bell')}Mitteilungen erlauben</button>`;
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&document.querySelector('.install.pushgate'))updatePushGate()});
+
 /* ---------- Start ---------- */
 applyTheme();render();
 if(MUST_INSTALL)showInstall();
+else if(mustPush())showPushGate();
+else if(STANDALONE&&PUSH_OK&&GH.on&&!(S.push&&S.push.on))setTimeout(()=>pushEnable(),2500);
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{try{const u=new URL(e.data&&e.data.open);const t=u.searchParams.get('tab');if(t)go(t)}catch(_){}});
+if(GH.on&&!MUST_INSTALL)setTimeout(()=>syncPlan(true),3000);
 if(GH.on&&!MUST_INSTALL){setSync('laden');lastLoad=Date.now();loadRemote(true)}
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 /* Schnelle Updates: beim Öffnen, beim Zurückkehren und alle 2 Minuten nach einer neuen Version schauen */
