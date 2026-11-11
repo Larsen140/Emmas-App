@@ -35,11 +35,11 @@
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden;transition:background .4s}
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background-image:var(--pat-img);background-size:var(--pat-size) var(--pat-size);opacity:var(--pat-op)}
-body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:var(--glow,none)}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:var(--glow,none);opacity:var(--glow-op,.7)}
 button,input,select,textarea{font:inherit;color:inherit}
 input,select,textarea{font-size:16px}
 .app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
-header.top{position:relative;z-index:4;padding:calc(env(safe-area-inset-top,0px) + 10px) max(14px,env(safe-area-inset-right)) 12px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--surface) 84%,transparent);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border-bottom:1px solid var(--line);box-shadow:0 10px 30px -22px color-mix(in srgb,var(--text) 60%,transparent)}
+header.top{position:relative;z-index:4;padding:calc(env(safe-area-inset-top,0px) + 10px) max(14px,env(safe-area-inset-right)) 12px max(14px,env(safe-area-inset-left));background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border-bottom:1px solid var(--line);box-shadow:0 10px 30px -22px color-mix(in srgb,var(--text) 60%,transparent)}
 .top-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;gap:12px}
 .logo{width:44px;height:44px;border-radius:13px;flex:none;display:grid;place-items:center;background:linear-gradient(160deg,#fcf5e9 0%,#efdfc5 55%,#e0c49c 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 0 0 1px rgba(255,255,255,.35),0 0 0 1px rgba(107,74,46,.16),0 6px 14px -6px rgba(60,40,20,.45)}
 .logo span{font-family:var(--f-display);font-weight:600;font-size:28px;line-height:1;color:#6b4a2e;margin-top:-2px;text-shadow:0 1px 0 rgba(255,255,255,.6)}
@@ -233,7 +233,7 @@ nav.tabs{position:fixed;z-index:6;left:0;right:0;margin-inline:auto;bottom:calc(
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* ===== 1.7: flüssiger, schöner ===== */
-.card{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--surface) 95%,transparent)}
+.card{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--surface) var(--card-a,95%),transparent)}
 .btn{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 78%,#fff) 0%,var(--accent) 48%,color-mix(in srgb,var(--accent) 84%,#000) 100%);transition:transform .2s cubic-bezier(.3,1.7,.5,1),box-shadow .2s,filter .2s}
 .btn.ghost{background:color-mix(in srgb,var(--surface) 70%,transparent)}
 .btn.danger{background:color-mix(in srgb,var(--bad) 13%,transparent)}
@@ -260,8 +260,11 @@ nav.tabs{isolation:isolate}
 .collapse{overflow:hidden;transition:height .32s cubic-bezier(.4,0,.2,1),opacity .25s,transform .32s cubic-bezier(.4,0,.2,1)!important}
 .sw{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
 .sw:last-child{border-bottom:0}
-.sw>.row{position:relative;z-index:1;border-bottom:0;background:var(--surface);touch-action:pan-y;transition:transform .35s cubic-bezier(.2,1.2,.3,1)}
+.sw>.row{position:relative;z-index:1;border-bottom:0;background:transparent;touch-action:pan-y;transition:transform .35s cubic-bezier(.2,1.2,.3,1)}
 .sw>.row.dragging{transition:none}
+.sw-bg{visibility:hidden}
+.sw.swiping .sw-bg{visibility:visible}
+.sw.swiping>.row{background:var(--surface)}
 .sw-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-weight:800;font-size:14px;color:#fff;background:var(--good)}
 .sw-bg.del{background:var(--bad)}
 .sw-bg .r,.sw-bg.del .l{visibility:hidden}.sw-bg.del .r{visibility:visible}
@@ -306,8 +309,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.9';
-const BUILD='2026-11-11-0020'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='1.9.1';
+const BUILD='2026-11-11-0805'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -331,6 +334,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'1.9.1',d:'11.11.2026',t:'Kräftigere Farbverläufe',items:[
+    ['Besser','Die Farbverläufe sind deutlich besser zu sehen, die Karten lassen sie leicht durchscheinen.'],
+    ['Neu','Regler „Stärke des Verlaufs“ in den Optionen.']]},
   {v:'1.9',d:'11.11.2026',t:'Mehr Farben',items:[
     ['Neu','Eigene Hintergrundfarbe mit 14 Vorlagen, von Creme bis Nachtblau.'],
     ['Neu','Farbverläufe im Hintergrund: Sanft, Akzent, Sonnenuntergang, Pastell, Aurora.'],
@@ -411,7 +417,7 @@ const lcol=k=>(LAEDEN[k]||[0,'var(--muted)'])[1];
 
 /* ---------- Speicher ---------- */
 const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],
-  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,bg:null,patCol:null,patSize:100,glow:'sanft',mode:'auto',laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
+  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,bg:null,patCol:null,patSize:100,glow:'sanft',glowOp:70,mode:'auto',laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
@@ -465,17 +471,21 @@ function applyTheme(){
   r.style.setProperty('--pat-img',patternImg(st.pattern,patColor()));
   r.style.setProperty('--pat-size',patSize(st.pattern));
   r.style.setProperty('--glow',glowCss(st.glow||'sanft'));
+  const gOn=(st.glow||'sanft')!=='aus',gOp=(st.glowOp??70)/100;
+  r.style.setProperty('--glow-op',String(gOp));
+  // Karten lassen den Verlauf etwas durchscheinen, je stärker der Verlauf, desto mehr
+  r.style.setProperty('--card-a',gOn?Math.round(90-gOp*24)+'%':'95%');
   r.style.setProperty('--pat-op',String((dark?.35:1)*(st.patOp/100)*.55));
   const m=document.querySelector('meta[name=theme-color]');if(m)m.content=v.bg.startsWith('#')?v.bg:(dark?'#1a1613':'#f6efe4');
 }
 function patColor(){const st=S.settings;if(st.patCol)return st.patCol;const t=THEMES[st.theme]||THEMES.latte;return isDark()?'#ffffff':(st.accent||(t.dark?THEMES.latte:t).accent)}
 function patSize(p){const k=(S.settings.patSize||100)/100;return (PSIZE[p]||'28px').split(' ').map(x=>Math.round(parseFloat(x)*k)+'px').join(' ')}
 function glowCss(g){return {aus:'none',
-  sanft:'radial-gradient(50% 40% at 100% 100%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 70%)',
-  akzent:'linear-gradient(180deg,color-mix(in srgb,var(--accent) 16%,transparent),transparent 55%),radial-gradient(50% 40% at 100% 100%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%)',
-  sonne:'radial-gradient(60% 45% at 0% 0%,rgba(255,170,90,.30),transparent 70%),radial-gradient(55% 45% at 100% 100%,rgba(240,100,140,.24),transparent 70%)',
-  pastell:'radial-gradient(45% 35% at 8% 8%,rgba(255,182,193,.38),transparent 70%),radial-gradient(45% 35% at 92% 30%,rgba(173,216,230,.38),transparent 70%),radial-gradient(50% 40% at 40% 98%,rgba(200,230,180,.38),transparent 70%)',
-  aurora:'radial-gradient(60% 40% at 20% 0%,rgba(80,220,170,.26),transparent 70%),radial-gradient(55% 40% at 92% 40%,rgba(120,120,255,.24),transparent 70%),radial-gradient(60% 45% at 30% 100%,rgba(200,90,220,.22),transparent 70%)'}[g]||'none'}
+  sanft:'radial-gradient(70% 45% at 85% 20%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 70%),linear-gradient(170deg,color-mix(in srgb,var(--accent) 14%,transparent) 0%,transparent 45%,color-mix(in srgb,var(--accent) 34%,transparent) 100%)',
+  akzent:'linear-gradient(175deg,color-mix(in srgb,var(--accent) 42%,transparent) 0%,color-mix(in srgb,var(--accent) 10%,transparent) 55%,color-mix(in srgb,var(--accent) 30%,transparent) 100%)',
+  sonne:'radial-gradient(60% 40% at 90% 15%,rgba(255,210,120,.5),transparent 70%),linear-gradient(165deg,rgba(255,165,85,.5) 0%,rgba(250,115,150,.42) 55%,rgba(165,105,215,.4) 100%)',
+  pastell:'radial-gradient(55% 40% at 15% 85%,rgba(255,240,170,.45),transparent 70%),linear-gradient(155deg,rgba(255,170,195,.55) 0%,rgba(165,205,245,.5) 50%,rgba(180,230,165,.5) 100%)',
+  aurora:'radial-gradient(60% 40% at 80% 30%,rgba(110,110,255,.4),transparent 70%),linear-gradient(165deg,rgba(55,215,160,.45) 0%,rgba(95,120,250,.4) 50%,rgba(195,80,225,.42) 100%)'}[g]||'none'}
 mq.addEventListener&&mq.addEventListener('change',applyTheme);
 
 /* ---------- GitHub-Verbindung ---------- */
@@ -917,6 +927,7 @@ function vSettings(){
     <div class="field"><label>Hintergrundfarbe</label><div class="optrow colorrow"><input type="color" id="bgPick" value="${st.bg||(v.bg.startsWith('#')?v.bg:'#f6efe4')}" aria-label="Hintergrundfarbe wählen" style="width:46px;height:46px;border:0;border-radius:50%;padding:0;background:none"><div class="swatches bgs">${BG_PRESETS.map(([c,n])=>`<button data-act="set-bg" data-v="${c}" style="background:${c}" aria-pressed="${st.bg===c}" aria-label="${n}" title="${n}"></button>`).join('')}</div></div>
     ${st.bg?`<button class="btn ghost sm" style="align-self:flex-start" data-act="set-bg" data-v="">Farbe vom Thema</button>`:''}</div>
     <div class="field"><label>Farbverlauf</label><div class="glows">${Object.entries(GLOWS).map(([k,l])=>`<button class="glow" data-act="set-glow" data-v="${k}" aria-pressed="${(st.glow||'sanft')===k}" style="background-image:${glowCss(k)}"><span>${l}</span></button>`).join('')}</div></div>
+    ${(st.glow||'sanft')!=='aus'?`<div class="field"><label for="glowOp">Stärke des Verlaufs</label><input type="range" id="glowOp" min="20" max="100" step="5" value="${st.glowOp??70}"></div>`:''}
   </div>
   <div class="card pad sec"><h3>Muster</h3>
     <div class="pats">${Object.entries(PATTERNS).map(([k,l])=>`<button class="pat" data-act="set-pattern" data-v="${k}" aria-pressed="${st.pattern===k}" style="background-image:${patternImg(k,patColor())};background-size:${patSize(k)}"><span>${l}</span></button>`).join('')}</div>
@@ -958,9 +969,9 @@ document.addEventListener('pointerup',endSd);document.addEventListener('pointerc
 let sw=null,swipedAt=0;
 document.addEventListener('pointerdown',e=>{const r=e.target.closest('.row[data-swipe]');if(!r||e.target.closest('.check'))return;sw={r,x:e.clientX,y:e.clientY,dx:0,on:false,id:e.pointerId}});
 document.addEventListener('pointermove',e=>{if(!sw||e.pointerId!==sw.id)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;
-  if(!sw.on){if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.4){sw.on=true;sw.r.classList.add('dragging');try{sw.r.setPointerCapture(e.pointerId)}catch(_){}}else{if(Math.abs(dy)>12)sw=null;return}}
+  if(!sw.on){if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.4){sw.on=true;sw.r.classList.add('dragging');const box=sw.r.closest('.sw');if(box){clearTimeout(box._t);box.classList.add('swiping')}try{sw.r.setPointerCapture(e.pointerId)}catch(_){}}else{if(Math.abs(dy)>12)sw=null;return}}
   sw.dx=dx;const bg=sw.r.previousElementSibling;if(bg)bg.classList.toggle('del',dx<0);sw.r.style.transform=`translateX(${Math.max(-170,Math.min(170,dx))}px)`});
-const endSw=()=>{if(!sw)return;const s=sw;sw=null;if(!s.on)return;s.r.classList.remove('dragging');swipedAt=Date.now();const id=s.r.dataset.id,kind=s.r.dataset.swipe;
+const endSw=()=>{if(!sw)return;const s=sw;sw=null;if(!s.on)return;s.r.classList.remove('dragging');{const box=s.r.closest('.sw');if(box)box._t=setTimeout(()=>box.classList.remove('swiping'),400)}swipedAt=Date.now();const id=s.r.dataset.id,kind=s.r.dataset.swipe;
   if(s.dx>90){s.r.style.transform='';const c=s.r.querySelector('.check');kind==='item'?toggleItem(id,c):toggleTodo(id,c)}
   else if(s.dx<-90){s.r.style.transform='translateX(-110%)';setTimeout(()=>kind==='item'?deleteItem(id,s.r.closest('.sw')):deleteTodo(id,s.r.closest('.sw')),160)}
   else s.r.style.transform=''};
@@ -1050,7 +1061,7 @@ document.addEventListener('click',async e=>{
     case'set-bg':S.settings.bg=b.dataset.v||null;save();applyTheme();render();break;
     case'set-patcol':S.settings.patCol=b.dataset.v||null;save();applyTheme();render();break;
     case'set-glow':S.settings.glow=b.dataset.v;save();applyTheme();render();break;
-    case'reset-design':{const keep=S.settings;const d=DEF.settings;Object.assign(keep,{theme:d.theme,accent:null,pattern:d.pattern,patOp:d.patOp,bg:null,patCol:null,patSize:100,glow:'sanft',mode:'auto'});save();applyTheme();render();toast('Design zurückgesetzt');break}
+    case'reset-design':{const keep=S.settings;const d=DEF.settings;Object.assign(keep,{theme:d.theme,accent:null,pattern:d.pattern,patOp:d.patOp,bg:null,patCol:null,patSize:100,glow:'sanft',glowOp:70,mode:'auto'});save();applyTheme();render();toast('Design zurückgesetzt');break}
     case'toggle-laden':{const k=b.dataset.v,l=S.settings.laeden;if(l.includes(k)){if(l.length===1){toast('Mindestens ein Laden');break}S.settings.laeden=l.filter(x=>x!==k)}else S.settings.laeden=Object.keys(LAEDEN).filter(x=>x===k||l.includes(x));
       if(!S.settings.laeden.includes(S.settings.einkaufLaden))S.settings.einkaufLaden='alle';if(!S.settings.laeden.includes(S.settings.angLaden))S.settings.angLaden='alle';save();render();break}
     case'connect':{const tk=val('tokenIn').replace(/\s+/g,''),repo=DEFAULT_REPO;if(!tk){toast('Bitte den Zugangscode eingeben');break}
@@ -1081,6 +1092,7 @@ document.addEventListener('input',e=>{
   if(e.target.id==='bgPick'){S.settings.bg=e.target.value;save();applyTheme()}
   if(e.target.id==='patPick'){S.settings.patCol=e.target.value;save();applyTheme()}
   if(e.target.id==='patSize'){S.settings.patSize=+e.target.value;save();applyTheme()}
+  if(e.target.id==='glowOp'){S.settings.glowOp=+e.target.value;save();applyTheme()}
 });
 document.addEventListener('change',e=>{
   if(['accentPick','bgPick','patPick','patSize'].includes(e.target.id))render();
