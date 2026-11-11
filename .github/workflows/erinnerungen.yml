@@ -1,0 +1,68 @@
+# Erinnerungen an Termine und To-dos und Mitteilung bei neuen Updates.
+# Läuft hier im öffentlichen Repo, weil GitHub-Läufe hier kostenlos sind – deshalb alle 5 Minuten.
+# Die Daten liegen im privaten Repo emmas-app-daten; Zugriff über das Secret DATA_TOKEN.
+name: Erinnerungen
+
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+  push:
+    branches: [main]
+    paths: ['index.html']   # neue Version -> Update-Mitteilung
+  workflow_dispatch:
+
+concurrency:
+  group: erinnerungen
+  cancel-in-progress: false
+
+jobs:
+  erinnern:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Secrets prüfen
+        id: check
+        env:
+          DATA_TOKEN: ${{ secrets.DATA_TOKEN }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          if [ -z "$DATA_TOKEN" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then
+            echo "⚠️ Secrets DATA_TOKEN und/oder VAPID_PRIVATE_KEY fehlen noch im Repo Emmas-App."; echo "ok=false" >> "$GITHUB_OUTPUT"
+          else echo "ok=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Daten holen
+        if: steps.check.outputs.ok == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Larsen140/emmas-app-daten
+          token: ${{ secrets.DATA_TOKEN }}
+          path: daten
+
+      - name: Werkzeug installieren
+        if: steps.check.outputs.ok == 'true'
+        run: pip install -q pywebpush==2.5.0
+
+      - name: Warten, bis die neue Version online ist
+        if: steps.check.outputs.ok == 'true' && github.event_name == 'push'
+        run: sleep 75
+
+      - name: Mitteilungen schicken
+        if: steps.check.outputs.ok == 'true'
+        env:
+          EVENT: ${{ github.event_name }}
+          DATEN_ORDNER: daten
+          VORLAUF_MIN: '60'
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: python3 daten/scripts/erinnerung.py
+
+      - name: Stand speichern
+        if: steps.check.outputs.ok == 'true'
+        working-directory: daten
+        run: |
+          git config user.name "Emmas Planner"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add push.json push-status.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Nichts Neues"; exit 0; fi
+          git commit -q -m "Benachrichtigungen: Stand"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 3; done
+          exit 1
