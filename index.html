@@ -329,8 +329,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.0';
-const BUILD='2026-11-11-1415'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.1';
+const BUILD='2026-11-11-1430'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -354,6 +354,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.1',d:'11.11.2026',t:'Scannen und sofort Preise',items:[
+    ['Neu','Nach dem Scannen sucht die App sofort Angebote und Preise. Bei dm findet sie über den Strichcode genau dein Produkt.'],
+    ['Neu','Ohne gewählten Laden zeigt die App, wo es gerade am günstigsten ist.']]},
   {v:'2.0',d:'11.11.2026',t:'Strichcode-Scanner',items:[
     ['Neu','Scanne den Strichcode einer Packung (Symbol links in der Suchleiste) und das genaue Produkt kommt auf die Liste, mit Marke und Größe.'],
     ['Neu','Funktioniert mit Lebensmitteln und Drogerieartikeln (Daten von Open Food Facts). Klappt der Scan nicht, kannst du die Nummer eintippen.']]},
@@ -577,12 +580,13 @@ async function addWatch(name){
 }
 // Neue Produkte aus der Einkaufsliste sammeln und gebündelt suchen lassen
 let watchQueue=new Set(),watchT;
-function queueWatch(name){
+const watchEan={};
+function queueWatch(name,ean){
   if(!GH.on||!S.settings.autoSuche)return;
   const n=norm(name);if(!n||(S.merkliste?.produkte||[]).some(p=>norm(p.name||p)===n))return;
-  watchQueue.add(name.trim());clearTimeout(watchT);
+  watchQueue.add(name.trim());if(ean)watchEan[name.trim()]=ean;clearTimeout(watchT);
   watchT=setTimeout(async()=>{const names=[...watchQueue];watchQueue.clear();
-    const ok=await editMerkliste(d=>{d.produkte=d.produkte||[];for(const nm of names)if(!d.produkte.some(p=>norm(p.name||p)===norm(nm)))d.produkte.push({name:nm})},`Merkliste: ${names.join(', ')} hinzugefügt`);
+    const ok=await editMerkliste(d=>{d.produkte=d.produkte||[];for(const nm of names)if(!d.produkte.some(p=>norm(p.name||p)===norm(nm)))d.produkte.push(watchEan[nm]?{name:nm,ean:watchEan[nm]}:{name:nm})},`Merkliste: ${names.join(', ')} hinzugefügt`);
     if(ok){toast(names.length===1?`Suche Preise für „${names[0]}“…`:`Suche Preise für ${names.length} Produkte…`);startPolling()}},900);
 }
 async function removeWatch(name){
@@ -611,8 +615,18 @@ function candidates(it){
   const nps=(e.normalpreise||[]).filter(o=>o.laden===it.laden).map(o=>({...o,produkt:e.name,normal:true}));
   const q=norm(it.produkt||it.name).split(' ').pop();
   const head=o=>{const w=norm(o.titel).split(' ').filter(x=>!/^[0-9]+$|^[0-9]*(g|kg|ml|l|st|stk|x)$/.test(x));return w[w.length-1]===q?0:1};
-  const sc=o=>(o.unpassend?20:0)+(o.rang??1)*2+head(o);
+  const sc=o=>(o.exakt?-10:0)+(o.unpassend?20:0)+(o.rang??1)*2+head(o);
   return [...offs,...nps].sort((a,b)=>sc(a)-sc(b)||a.preis-b.preis);
+}
+// Ohne gewählten Laden: das günstigste passende Angebot bzw. den günstigsten Normalpreis über alle Läden
+function cheapest(e){
+  const t=todayIso(),ls=S.settings.laeden;
+  const all=[...(e.angebote||[]).filter(o=>!o.bis||o.bis>=t).map(o=>({...o})),...(e.normalpreise||[]).map(o=>({...o,normal:true}))]
+    .filter(o=>!o.unpassend&&ls.includes(o.laden));
+  if(!all.length)return null;
+  const exakt=all.filter(o=>o.exakt),pool=exakt.length?exakt:all.filter(o=>(o.rang??1)===0).length?all.filter(o=>(o.rang??1)===0):all;
+  const o=pool.sort((a,b)=>a.preis-b.preis)[0];
+  return {preis:o.preis,normal:o.normal?o.preis:(o.alterPreis||null),deal:o.normal?null:{preis:o.preis,bis:o.bis},titel:o.titel,quelle:'günstigst',src:o,bei:o.laden};
 }
 function effPrice(it){
   const t=todayIso(),e=entryFor(it),w=it.wahl;
@@ -628,6 +642,7 @@ function effPrice(it){
   const c=candidates(it).filter(o=>!o.unpassend),off=c.find(o=>!o.normal),nor=c.find(o=>o.normal);
   if(off&&(!nor||c.indexOf(off)<c.indexOf(nor)))return {preis:off.preis,normal:off.alterPreis||(nor&&nor.preis)||null,deal:{preis:off.preis,bis:off.bis},titel:off.titel,quelle:'auto',src:off};
   if(nor)return {preis:nor.preis,normal:nor.preis,deal:null,titel:nor.titel,quelle:'auto',ki:!!nor.ki,src:nor};
+  if(!it.laden&&e){const best=cheapest(e);if(best)return best}
   if(typ!=null)return {preis:typ,normal:typ,deal:null,est:true,quelle:'schätzung'};
   return {preis:null,normal:null,deal:null};
 }
@@ -701,12 +716,12 @@ function shareText(){
   const d=new Date().toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'numeric'});
   const L=[`🛒 *Einkaufsliste* · ${d}`];let total=0,saved=0,est=false,deal=false;
   for(const k of order){
-    L.push('',`*${k?lname(k):'Ohne Laden'}*`);
+    L.push('',`*${k?lname(k):'Laden offen'}*`);
     for(const x of grp[k]){
       const p=effPrice(x),q=qty(x),src=p.src||{};
       // genaues Produkt statt Suchwort, z. B. "Milsani Laktosefreie H-Milch (1 l)" statt "Milch"
       let nm=p.titel&&!p.est?p.titel:x.name;const sz=groesse(src.info);if(sz&&!groesse(nm))nm+=` (${sz})`;
-      let t=`☐ ${q>1?q+'× ':''}${nm}`;
+      let t=`☐ ${q>1?q+'× ':''}${nm}${p.bei?` (bei ${lname(p.bei)})`:''}`;
       if(x.notiz)t+=` _(${x.notiz})_`;
       if(p.preis!=null){total+=p.preis*q;if(p.est)est=true;t+=` – ${p.est?'ca. ':''}${eur(p.preis*q)}`;
         if(p.deal){deal=true;t+=' 🏷️';if(p.normal&&p.normal>p.preis)saved+=(p.normal-p.preis)*q}}
@@ -761,9 +776,9 @@ async function lookupCode(code){
     <div class="fields">
       <div class="field full"><label for="sc-name">Name auf der Liste</label><input id="sc-name" value="${esc(full)}" placeholder="z. B. Milsani H-Milch 1 l"></div>
       <div class="field"><label for="sc-such">Suchbegriff für Preise</label><input id="sc-such" value="${esc(such)}" placeholder="z. B. H-Milch"></div>
-      <div class="field"><label for="sc-laden">Laden</label>${storeSelect('sc-laden',S.settings.einkaufLaden!=='alle'?S.settings.einkaufLaden:'')}</div>
+      <div class="field"><label for="sc-laden">Laden</label>${storeSelect('sc-laden',S.settings.einkaufLaden!=='alle'?S.settings.einkaufLaden:'',true,'Günstigster (automatisch)')}</div>
     </div>
-    <p class="note muted small" style="margin:0">Der Suchbegriff wird für Angebote und Preise benutzt. Kurz ist besser, z. B. „elmex Zahnpasta“.</p>
+    <p class="note muted small" style="margin:0">Nach dem Hinzufügen sucht die App sofort Angebote und Preise – bei dm sogar genau dieses Produkt über den Strichcode. Ohne Laden zeigt sie dir, wo es am günstigsten ist.</p>
     <div class="sheet-actions"><button class="btn ghost" data-act="scan">${ic('scan')}Nochmal scannen</button><button class="btn" data-act="scan-add" data-ean="${esc(code)}">${ic('plus')}Hinzufügen</button></div>`);
   if(!prod)setTimeout(()=>{const f=document.getElementById('sc-name');f&&f.focus()},350);
 }
@@ -774,8 +789,8 @@ function storeChips(sel,act){
   const ls=S.settings.laeden;
   return `<div class="chips" role="group" aria-label="Laden"><button class="chip" data-act="${act}" data-v="alle" aria-pressed="${sel==='alle'}">Alle</button>${ls.map(k=>`<button class="chip" data-act="${act}" data-v="${k}" aria-pressed="${sel===k}"><i class="dot" style="background:${lcol(k)}"></i>${esc(lname(k))}</button>`).join('')}</div>`;
 }
-function storeSelect(id,val,withNone=true){
-  return `<select id="${id}" aria-label="Laden">${withNone?`<option value="">Ohne Laden</option>`:''}${S.settings.laeden.map(k=>`<option value="${k}" ${val===k?'selected':''}>${esc(lname(k))}</option>`).join('')}</select>`;
+function storeSelect(id,val,withNone=true,noneLabel='Ohne Laden'){
+  return `<select id="${id}" aria-label="Laden">${withNone?`<option value="">${noneLabel}</option>`:''}${S.settings.laeden.map(k=>`<option value="${k}" ${val===k?'selected':''}>${esc(lname(k))}</option>`).join('')}</select>`;
 }
 function vEinkauf(){
   const sel=S.settings.einkaufLaden;
@@ -789,13 +804,13 @@ function vEinkauf(){
   const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="sw"><div class="sw-bg" aria-hidden="true"><span class="l">✓ ${it.done?'Zurück':'Im Wagen'}</span><span class="r">Löschen</span></div><div class="row ${it.done?'done':''}" data-swipe="item" data-id="${it.id}">
     <button class="check ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
     <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
-      <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${p.ki===true?'<span class="tag acc">KI-Preis</span>':''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
+      <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.bei?`<span class="tag acc">am günstigsten bei ${esc(lname(p.bei))}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${p.ki===true?'<span class="tag acc">KI-Preis</span>':''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
     <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:(pending(it)&&!it.done?`<span class="muted small" style="display:inline-flex;gap:6px;align-items:center"><span class="spin"></span>sucht…</span>`:`<span class="muted small">kein Preis</span>`)}</div></div></div>`};
   const sum=arr=>arr.reduce((s,it)=>{const p=effPrice(it);return s+(p.preis||0)*qty(it)},0);
   let listHtml='';
   if(!items.length){listHtml=`<div class="card empty"><div class="em">🧺</div><b>Die Liste ist leer</b>Tippe oben ein, was du brauchst. Vorschläge kommen aus deinen Angeboten und früheren Einkäufen.</div>`}
   else{
-    listHtml=`<div class="card list">${order.map(k=>`<div class="group-h"><i class="dot" style="background:${k?lcol(k):'var(--muted)'}"></i>${esc(k?lname(k):'Ohne Laden')}<b>${sum(groups[k])?eur(sum(groups[k])):''}</b></div>${groups[k].map(row).join('')}`).join('')}
+    listHtml=`<div class="card list">${order.map(k=>`<div class="group-h"><i class="dot" style="background:${k?lcol(k):'var(--muted)'}"></i>${esc(k?lname(k):'Laden offen')}<b>${sum(groups[k])?eur(sum(groups[k])):''}</b></div>${groups[k].map(row).join('')}`).join('')}
     ${done.length?`<div class="group-h">Im Wagen · ${done.length}<button class="btn ghost sm right" data-act="clear-done" style="text-transform:none;letter-spacing:0">Abgehakte löschen</button></div>${done.map(row).join('')}`:''}</div>`;
   }
   // Preisrechner
@@ -822,7 +837,7 @@ function vEinkauf(){
   <div class="cols"><div class="sec">
     <form class="card addbar" data-form="add-item" autocomplete="off">
       <button type="button" class="icon-btn scanbtn" data-act="scan" aria-label="Strichcode scannen">${ic('scan')}</button><input id="addName" placeholder="Produkt suchen oder hinzufügen" value="${esc(suggQ)}" enterkeyhint="done" aria-label="Produkt">
-      ${storeSelect('addLaden',sel!=='alle'?sel:'')}
+      ${storeSelect('addLaden',sel!=='alle'?sel:'',true,'Günstigster')}
       <button class="btn sm" type="submit" aria-label="Hinzufügen">${ic('plus')}</button>
       <div class="sugg" id="sugg" hidden></div>
     </form>
@@ -855,7 +870,7 @@ function addItem(name,laden,extra={}){
   S.einkauf.unshift(it);
   S.verlauf=[{name,laden:laden||''},...S.verlauf.filter(h=>!(norm(h.name)===norm(name)&&(h.laden||'')===(laden||'')))].slice(0,200);
   const hk=norm(name)+'|'+(laden||'');S.haeufig=S.haeufig||{};const h=S.haeufig[hk]||{name,laden:laden||'',n:0};h.n++;h.t=Date.now();h.name=name;S.haeufig[hk]=h;
-  save();queueWatch(it.produkt);
+  save();queueWatch(it.produkt,it.ean);
 }
 function itemSheet(it){
   const p=effPrice(it),cand=candidates(it).slice(0,8),w=it.wahl;
