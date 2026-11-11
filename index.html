@@ -294,6 +294,26 @@ nav.tabs{isolation:isolate}
 .calc{position:relative;overflow:hidden}
 .calc::after{content:"";position:absolute;right:-40px;top:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 18%,transparent),transparent);pointer-events:none}
 .bar i{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 50%,var(--good)))}
+
+/* Strichcode-Scanner */
+.scanbtn{color:var(--accent);margin-left:-8px}
+.scanner{position:fixed;inset:0;z-index:40;background:#000;display:flex;flex-direction:column;animation:fade .2s}
+.scanner video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scanner .shade{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 62% 18% at 50% 46%,transparent 98%,rgba(0,0,0,.55) 100%)}
+.scanner .frame{position:absolute;left:50%;top:46%;width:min(78vw,340px);height:min(40vw,170px);transform:translate(-50%,-50%);border-radius:22px;box-shadow:0 0 0 2px rgba(255,255,255,.9),0 0 0 9999px rgba(0,0,0,.45);overflow:hidden}
+.scanner .frame::after{content:"";position:absolute;left:8%;right:8%;height:2px;top:50%;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 14px var(--accent);animation:scanline 1.8s ease-in-out infinite alternate}
+@keyframes scanline{from{top:12%}to{top:88%}}
+.scanner .top{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 12px) 16px 0;color:#fff}
+.scanner .top b{font-family:var(--f-display);font-size:20px;font-weight:600}
+.scanner .round{width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.scanner .bottom{position:absolute;z-index:2;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 24px);display:flex;flex-direction:column;align-items:center;gap:12px;color:#fff;text-align:center;padding:0 24px}
+.scanner .hint{font-weight:700;font-size:15px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.scanner .btn.ghost{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.3)}
+.scanner.hit .frame{box-shadow:0 0 0 3px var(--good),0 0 0 9999px rgba(0,0,0,.45)}
+.prodcard{display:flex;gap:14px;align-items:center}
+.prodcard img{width:72px;height:72px;object-fit:contain;border-radius:14px;background:#fff;flex:none;box-shadow:0 0 0 1px var(--line)}
+.prodcard .ph{width:72px;height:72px;border-radius:14px;flex:none;display:grid;place-items:center;background:var(--line);font-size:30px}
+.ean{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.04em}
 </style>
 </head>
 <body>
@@ -309,8 +329,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='1.9.1';
-const BUILD='2026-11-11-1350'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.0';
+const BUILD='2026-11-11-1415'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -334,6 +354,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.0',d:'11.11.2026',t:'Strichcode-Scanner',items:[
+    ['Neu','Scanne den Strichcode einer Packung (Symbol links in der Suchleiste) und das genaue Produkt kommt auf die Liste, mit Marke und Größe.'],
+    ['Neu','Funktioniert mit Lebensmitteln und Drogerieartikeln (Daten von Open Food Facts). Klappt der Scan nicht, kannst du die Nummer eintippen.']]},
   {v:'1.9.1',d:'11.11.2026',t:'Kräftigere Farbverläufe',items:[
     ['Besser','Die Farbverläufe sind deutlich besser zu sehen, die Karten lassen sie leicht durchscheinen.'],
     ['Neu','Regler „Stärke des Verlaufs“ in den Optionen.']]},
@@ -399,6 +422,7 @@ const ICONS={
   trash:'<path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/>',
   refresh:'<path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/>',
   bell:'<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+  scan:'<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 8v8M11 8v8M14 8v8M17 8v8"/>',
   share:'<path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>',
   link:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>'
 };
@@ -693,6 +717,56 @@ function shareText(){
   if(deal)L.push('_🏷️ = Angebot_');
   return L.join('\n');
 }
+/* ---------- Strichcode-Scanner ---------- */
+let zxReady=null,scanReader=null;
+function loadZX(){if(window.ZXing)return Promise.resolve();if(!zxReady)zxReady=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src='vendor/zxing-0.21.3.min.js';sc.onload=ok;sc.onerror=()=>{zxReady=null;no(new Error('Scanner konnte nicht geladen werden'))};document.head.appendChild(sc)});return zxReady}
+async function openScanner(){
+  closeSheet(true);
+  const o=document.createElement('div');o.className='scanner';o.setAttribute('role','dialog');o.setAttribute('aria-label','Strichcode scannen');
+  o.innerHTML=`<video playsinline muted autoplay></video><div class="frame" aria-hidden="true"></div>
+    <div class="top"><b>Strichcode scannen</b><button class="round" data-act="scan-close" aria-label="Schließen">${ic('x')}</button></div>
+    <div class="bottom"><div class="hint" id="scanHint">Halte den Strichcode in den Rahmen</div><button class="btn ghost sm" data-act="scan-manual">Nummer eintippen</button></div>`;
+  document.body.appendChild(o);
+  try{
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('Kamera wird hier nicht unterstützt');
+    await loadZX();
+    const hints=new Map();const F=ZXing.BarcodeFormat;
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E]);
+    scanReader=new ZXing.BrowserMultiFormatReader(hints,180);
+    await scanReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}},o.querySelector('video'),(res)=>{
+      if(!res||!o.isConnected||o.dataset.done)return;o.dataset.done=1;o.classList.add('hit');try{navigator.vibrate&&navigator.vibrate(60)}catch(_){}
+      setTimeout(()=>{closeScanner();lookupCode(res.getText())},250);
+    });
+  }catch(err){
+    const h=o.querySelector('#scanHint');if(h)h.textContent=(err&&err.name==='NotAllowedError')?'Kein Kamerazugriff. Erlaube die Kamera in den iPhone-Einstellungen oder tippe die Nummer ein.':(err&&err.message)||'Kamera nicht verfügbar';
+  }
+}
+function closeScanner(){try{scanReader&&scanReader.reset()}catch(_){}scanReader=null;document.querySelectorAll('.scanner').forEach(x=>{const v=x.querySelector('video');try{v&&v.srcObject&&v.srcObject.getTracks().forEach(t=>t.stop())}catch(_){}x.remove()})}
+// Kurzer Suchbegriff für die Preissuche: Marke + Hauptwort ("elmex Zahnpasta"), der Name bleibt ausführlich
+function suchbegriff(brand,name){const words=String(name||'').replace(/\d+([.,]\d+)?\s*(ml|l|g|kg|%|st(ück)?)\b/gi,'').split(/[\s,]+/).filter(w=>w.length>2);const head=words[words.length-1]||'';const b=String(brand||'').split(',')[0].trim();return [b,head].filter(Boolean).join(' ').trim()||name}
+async function lookupCode(code){
+  code=String(code||'').replace(/\D/g,'');if(code.length<8){toast('Ungültige Nummer');return}
+  openSheet(`<div class="sheet-head"><h3>Produkt</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div><div class="card banner" style="box-shadow:none"><span class="spin"></span><span class="grow">Suche Produkt ${esc(code)}…</span></div>`);
+  let prod=null;
+  for(const host of ['world.openfoodfacts.org','world.openbeautyfacts.org','world.openproductsfacts.org']){
+    try{const r=await fetch(`https://${host}/api/v2/product/${code}.json?fields=product_name,product_name_de,generic_name_de,brands,quantity,image_front_small_url`);if(!r.ok)continue;const d=await r.json();if(d&&d.status===1&&d.product){prod=d.product;break}}catch(_){}
+  }
+  const brand=prod?String(prod.brands||'').split(',')[0].trim():'';
+  const pname=prod?(prod.product_name_de||prod.product_name||prod.generic_name_de||'').trim():'';
+  const full=[brand&&!norm(pname).includes(norm(brand))?brand:'',pname].filter(Boolean).join(' ')+(prod&&prod.quantity&&!groesse(pname)?` (${String(prod.quantity).trim()})`:'');
+  const such=prod?suchbegriff(brand,pname):'';
+  if(!document.querySelector('.scrim:not(.closing)'))return; // Fenster wurde geschlossen
+  openSheet(`<div class="sheet-head"><h3>${prod?'Gefunden':'Nicht gefunden'}</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div>
+    <div class="prodcard">${prod&&prod.image_front_small_url?`<img src="${esc(prod.image_front_small_url)}" alt="">`:`<div class="ph">${prod?'📦':'❔'}</div>`}<div style="min-width:0"><div style="font-weight:800;font-size:17px;overflow-wrap:anywhere">${prod?esc(full):'Dieses Produkt kennt die Datenbank noch nicht.'}</div><div class="ean">EAN ${esc(code)}</div></div></div>
+    <div class="fields">
+      <div class="field full"><label for="sc-name">Name auf der Liste</label><input id="sc-name" value="${esc(full)}" placeholder="z. B. Milsani H-Milch 1 l"></div>
+      <div class="field"><label for="sc-such">Suchbegriff für Preise</label><input id="sc-such" value="${esc(such)}" placeholder="z. B. H-Milch"></div>
+      <div class="field"><label for="sc-laden">Laden</label>${storeSelect('sc-laden',S.settings.einkaufLaden!=='alle'?S.settings.einkaufLaden:'')}</div>
+    </div>
+    <p class="note muted small" style="margin:0">Der Suchbegriff wird für Angebote und Preise benutzt. Kurz ist besser, z. B. „elmex Zahnpasta“.</p>
+    <div class="sheet-actions"><button class="btn ghost" data-act="scan">${ic('scan')}Nochmal scannen</button><button class="btn" data-act="scan-add" data-ean="${esc(code)}">${ic('plus')}Hinzufügen</button></div>`);
+  if(!prod)setTimeout(()=>{const f=document.getElementById('sc-name');f&&f.focus()},350);
+}
 function undoToast(msg,undo){toast(msg,5000,{label:'Rückgängig',fn:undo})}
 
 /* ----- Einkauf ----- */
@@ -747,7 +821,7 @@ function vEinkauf(){
   ${storeChips(sel,'set-elad')}
   <div class="cols"><div class="sec">
     <form class="card addbar" data-form="add-item" autocomplete="off">
-      ${ic('search')}<input id="addName" placeholder="Produkt suchen oder hinzufügen" value="${esc(suggQ)}" enterkeyhint="done" aria-label="Produkt">
+      <button type="button" class="icon-btn scanbtn" data-act="scan" aria-label="Strichcode scannen">${ic('scan')}</button><input id="addName" placeholder="Produkt suchen oder hinzufügen" value="${esc(suggQ)}" enterkeyhint="done" aria-label="Produkt">
       ${storeSelect('addLaden',sel!=='alle'?sel:'')}
       <button class="btn sm" type="submit" aria-label="Hinzufügen">${ic('plus')}</button>
       <div class="sugg" id="sugg" hidden></div>
@@ -777,11 +851,11 @@ function showSugg(){
 function wahlVon(o){return {laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki,info:o.info||'',grundpreis:o.grundpreis||null,einheit:o.einheit||''}}
 function addItem(name,laden,extra={}){
   name=name.trim();if(!name)return;
-  const it={id:uid(),name,produkt:name,menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
+  const it={id:uid(),name,produkt:(extra.produkt||name),menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
   S.einkauf.unshift(it);
   S.verlauf=[{name,laden:laden||''},...S.verlauf.filter(h=>!(norm(h.name)===norm(name)&&(h.laden||'')===(laden||'')))].slice(0,200);
   const hk=norm(name)+'|'+(laden||'');S.haeufig=S.haeufig||{};const h=S.haeufig[hk]||{name,laden:laden||'',n:0};h.n++;h.t=Date.now();h.name=name;S.haeufig[hk]=h;
-  save();queueWatch(name);
+  save();queueWatch(it.produkt);
 }
 function itemSheet(it){
   const p=effPrice(it),cand=candidates(it).slice(0,8),w=it.wahl;
@@ -1005,6 +1079,12 @@ document.addEventListener('click',async e=>{
     // Einkauf
     case'set-elad':S.settings.einkaufLaden=b.dataset.v;save();render();break;
     case'toggle-item':toggleItem(id,b);break;
+    case'scan':openScanner();break;
+    case'scan-close':closeScanner();break;
+    case'scan-manual':{closeScanner();openSheet(`<div class="sheet-head"><h3>Nummer eintippen</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div><div class="field"><label for="sc-code">Strichcode-Nummer (unter den Strichen)</label><input id="sc-code" inputmode="numeric" pattern="[0-9]*" placeholder="z. B. 4005808262175"></div><div class="sheet-actions"><span></span><button class="btn" data-act="scan-lookup">Suchen</button></div>`);setTimeout(()=>{const f=document.getElementById('sc-code');f&&f.focus()},350);break}
+    case'scan-lookup':lookupCode(val('sc-code'));break;
+    case'scan-add':{const nm=val('sc-name').trim();if(!nm){toast('Bitte einen Namen eingeben');break}const su=val('sc-such').trim()||nm,ld=val('sc-laden');
+      addItem(nm,ld,{produkt:su,ean:b.dataset.ean});closeSheet();if(tab!=='einkauf')go('einkauf');else render();toast(`„${nm}“ hinzugefügt`);break}
     case'step':{const f=document.getElementById(b.dataset.t);if(f)f.value=Math.max(1,(parseInt(f.value)||1)+(+b.dataset.d));break}
     case'quick-add':{addItem(b.dataset.n,b.dataset.l);toast(`„${b.dataset.n}“ hinzugefügt`);render();break}
     case'share-list':{const text=shareText();
@@ -1103,7 +1183,7 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('focusin',e=>{if(e.target.id==='addName')showSugg()});
 document.addEventListener('pointerdown',e=>{const box=$('#sugg');if(box&&!box.hidden&&!e.target.closest('.addbar'))box.hidden=true});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeScanner();closeSheet()}});
 let lastLoad=0;
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){header();if(GH.on&&Date.now()-lastLoad>5*60e3){lastLoad=Date.now();loadRemote(true)}}});
 

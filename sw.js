@@ -1,6 +1,6 @@
 // Emmas Planner: hält die App offline verfügbar. Immer zuerst das Netz, damit Updates sofort ankommen.
-const CACHE = 'emmas-planner-v3';
-const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png', './icons/favicon.png'];
+const CACHE = 'emmas-planner-v4';
+const FILES = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/apple-touch-icon.png', './icons/favicon.png', './vendor/zxing-0.21.3.min.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
