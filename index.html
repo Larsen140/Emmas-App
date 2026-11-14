@@ -314,6 +314,44 @@ nav.tabs{isolation:isolate}
 .prodcard img{width:72px;height:72px;object-fit:contain;border-radius:14px;background:#fff;flex:none;box-shadow:0 0 0 1px var(--line)}
 .prodcard .ph{width:72px;height:72px;border-radius:14px;flex:none;display:grid;place-items:center;background:var(--line);font-size:30px}
 .ean{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.ang-seg{margin:2px 0 0}
+.chip .cnt{font-size:11px;font-weight:800;opacity:.6;margin-left:1px}
+.chip.leer{opacity:.55}
+.pk-tools{padding:10px;display:grid;gap:10px}
+.pk-search{display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:14px;background:var(--line);color:var(--muted)}
+.pk-search svg{width:18px;height:18px;flex:none}
+.pk-search input{flex:1;min-width:0;border:0;background:transparent;outline:0;padding:11px 0;font-size:16px;color:var(--text)}
+.pk-search input::-webkit-search-cancel-button{opacity:.5}
+.pk-h{display:flex;align-items:center;gap:6px;padding:6px 4px 0}
+.pk-h svg{width:16px;height:16px;color:var(--good)}
+.pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+@media(min-width:700px){.pk-grid{grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}}
+.pk{position:relative;display:flex;flex-direction:column;min-width:0;background:var(--card);border:1px solid color-mix(in srgb,var(--surface) 60%,var(--line));border-radius:20px;box-shadow:var(--shadow);overflow:hidden;animation:pkIn .35s ease both}
+@keyframes pkIn{from{opacity:0;transform:translateY(6px)}}
+.pk.mine.liste{border-color:color-mix(in srgb,var(--good) 70%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--good) 45%,transparent),var(--shadow)}
+.pk.mine.merk{border-color:color-mix(in srgb,var(--accent) 60%,transparent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent),var(--shadow)}
+.pk-img{position:relative;aspect-ratio:4/3;background:#fff;display:grid;place-items:center;overflow:hidden}
+.pk-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box;z-index:1}
+.pk-ph{font-size:30px;opacity:.35}
+.pk-off{position:absolute;z-index:2;top:8px;left:8px;background:var(--bad);color:#fff;font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;box-shadow:0 4px 10px -4px rgba(0,0,0,.4)}
+.pk-mark{display:flex;align-items:center;gap:5px;padding:5px 10px;font-size:12px;font-weight:800;background:var(--good);color:#fff}
+.pk-mark svg{width:14px;height:14px;stroke-width:3}
+.pk-mark.merk{background:var(--accent);color:var(--accent-ink)}
+.pk-b{padding:9px 11px 0;flex:1;min-width:0}
+.pk-m{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pk-n{font-weight:800;font-size:15px;line-height:1.25;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pk-d{font-size:12px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pk-f{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;padding:8px 9px 4px 11px}
+.pk-p{min-width:0}
+.pk-p b{display:block;font-family:var(--f-display);font-size:22px;font-weight:600;line-height:1.05;color:var(--good);font-variant-numeric:tabular-nums}
+.pk-p s{font-size:12px;color:var(--muted);margin-right:5px}
+.pk-p small{font-size:11px;color:var(--muted);white-space:nowrap}
+.pk-add{flex:none;width:38px;height:38px;border-radius:13px;border:0;background:var(--text);color:var(--bg);display:grid;place-items:center;cursor:pointer;transition:transform .2s cubic-bezier(.3,1.7,.5,1),background .2s}
+.pk-add:active{transform:scale(.88)}
+.pk-add svg{width:20px;height:20px;stroke-width:2.6}
+.pk-add.on{background:var(--good);color:#fff}
+.pk-v{padding:0 11px 10px;font-size:11.5px;font-weight:700;color:var(--muted)}
+.pk-more{width:100%;margin-top:4px}
 </style>
 </head>
 <body>
@@ -329,8 +367,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.3';
-const BUILD='2026-11-11-1845'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.4';
+const BUILD='2026-11-14-2015'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -354,6 +392,11 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.4',d:'14.11.2026',t:'Alle Prospekt-Angebote',items:[
+    ['Neu','Unter Angebote siehst du jetzt alle Angebote aus den aktuellen Prospekten. Tipp einfach auf einen Laden.'],
+    ['Neu','Suchfeld und Kategorien, damit du schnell findest, was du brauchst. Angebote ab nächster Woche stehen unter „Demnächst“.'],
+    ['Neu','Was schon auf deiner Einkaufsliste oder Merkliste steht, ist deutlich markiert und steht ganz oben.'],
+    ['Neu','Mit + kommt ein Angebot direkt auf die Einkaufsliste, samt Laden und Preis.']]},
   {v:'2.3',d:'11.11.2026',t:'Fehlerbehebungen',items:[
     ['Besser','Erinnerungen an Termine und To-dos kommen zuverlässiger an.'],
     ['Besser','Einkaufsliste, Termine und To-dos werden zuverlässiger gespeichert.'],
@@ -423,6 +466,7 @@ const UPDATES=[
 ];
 const TABS=[['einkauf','Einkauf','cart'],['angebote','Angebote','tag'],['termine','Termine','cal'],['todos','To-dos','check'],['updates','Updates','spark'],['einstellungen','Optionen','gear']];
 const ICONS={
+  tick:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   cart:'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h2.6l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1l1.6-6.8H6.2"/>',
   tag:'<path d="M3 12.2V4.5A1.5 1.5 0 0 1 4.5 3h7.7l8.8 8.8a1.5 1.5 0 0 1 0 2.1l-7.1 7.1a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8" cy="8" r="1.6"/>',
   cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
@@ -994,7 +1038,7 @@ function addItem(name,laden,extra={}){
   S.einkauf.unshift(it);
   S.verlauf=[{name,laden:laden||''},...S.verlauf.filter(h=>!(norm(h.name)===norm(name)&&(h.laden||'')===(laden||'')))].slice(0,200);
   const hk=norm(name)+'|'+(laden||'');S.haeufig=S.haeufig||{};const h=S.haeufig[hk]||{name,laden:laden||'',n:0};h.n++;h.t=Date.now();h.name=name;S.haeufig[hk]=h;
-  save();queueWatch(it.produkt,it.ean);
+  save();if(!it.prospekt)queueWatch(it.produkt,it.ean);
 }
 function itemSheet(it){
   const p=effPrice(it),cand=candidates(it).slice(0,8),w=it.wahl;
@@ -1018,8 +1062,138 @@ function itemSheet(it){
 }
 
 /* ----- Angebote ----- */
+/* ----- Prospekte: alle Angebote pro Laden ----- */
+const PR={index:null,laeden:{},laden:{},q:'',limit:60,refresh:false,pollT:null,fehler:null};
+const KAT_GRUPPEN=[
+  ['nonfood','Haushalt & mehr',/deko|textil|kleidung|schuh|geraet|werkzeug|garten|moebel|spielzeug|buecher|lampe|leucht|geschirr|kuechen|zubehoer|batterie|elektro|multimedia|computer|handy|sport|camping|auto|fahrrad|heimwerk|baumarkt|pflanze|blume|tier|haustier|praesent|geschenk|koffer|tasche|bett|matratze|teppich|vorhang|bad|beleuchtung|kerze|weihnacht|reise|spiel/],
+  ['drogerie','Drogerie',/pflege|dusch|shampoo|haar|creme|lotion|deo|zahn|kosmetik|nahrungsergaenzung|wasch|putz|reinig|papier|windel|baby|hygiene|rasier|parfum|duft|make up|nagel|seife|gesicht|sonnen|vitamin|medizin|apotheke|spuel/],
+  ['getraenke','Getränke',/drink|getraenk|bier|wein|whisk|spirituose|saft|wasser|kaffee|tee|sekt|likoer|gin|rum|vodka|wodka|schorle|limonade|cola|energy|sirup|champagner|prosecco|kakao/],
+  ['suess','Süßes & Snacks',/schoko|keks|suess|fruchtgummi|bonbon|chips|snack|knabber|nuss|nuesse|riegel|praline|lebkuchen|gebaeck|^eis$|speiseeis|dessert|marzipan|stollen/],
+  ['obst','Obst & Gemüse',/obst|gemuese|fruechte|frucht|salat|kartoffel|pilz|kraeuter|beere|zitrus|apfel|aepfel|banane|tomate|zwiebel|trauben/],
+  ['fleisch','Fleisch & Fisch',/fleisch|gefluegel|wurst|wuerst|schinken|salami|fisch|meeres|hack|lachs|aufschnitt|garnele|haehnchen|pute|steak|grill/],
+  ['milch','Milch, Käse & Eier',/kaese|milch|joghurt|quark|butter|eier|sahne|pudding|margarine|aufstrich|feinkost/],
+  ['brot','Brot & Backen',/brot|broetchen|back|kuchen|mehl|toast|zucker|hefe/],
+  ['vorrat','Vorrat & Tiefkühl',/./]];
+function katGruppe(o){const k=norm(o.k||'');if(!k)return 'vorrat';for(const [id,,re] of KAT_GRUPPEN)if(re.test(k))return id;return 'vorrat'}
+function prospImg(o){return o.img?`https://mg2de.b-cdn.net/api/v1/offers/${o.i}/images/default/0/small.jpg`:''}
+function prospTitel(o){const n=o.n||'';return o.m&&!norm(n).includes(norm(o.m))?`${o.m} ${n}`:n}
+// passt ein Eintrag (z. B. "Milch") zu einem Prospekt-Angebot ("Weihenstephan Frische Vollmilch")?
+function wortListe(s){return norm(s).split(' ').filter(w=>w.length>1)}
+function nameTrifft(woerter,o){
+  if(!woerter.length)return false;
+  const tw=(o._tw||(o._tw=norm(((o.m||'')+' '+(o.n||'')).replace(/(\S)-(?=\S)/g,'$1')).split(' ')));
+  return woerter.every(w=>tw.some(t=>t===w||(t.length>w.length&&t.endsWith(w))));
+}
+function prospMarken(){
+  const liste=S.einkauf.filter(it=>!it.done).map(it=>({it,w:wortListe(it.produkt||it.name)}));
+  const merk=(S.merkliste?.produkte||[]).map(p=>wortListe(p.name||p));
+  return o=>{
+    const direkt=liste.find(x=>x.it.prospekt===o.i);if(direkt)return {art:'liste',it:direkt.it,direkt:true};
+    const x=liste.find(x=>!x.it.prospekt&&nameTrifft(x.w,o));if(x)return {art:'liste',it:x.it};
+    if(merk.some(w=>nameTrifft(w,o)))return {art:'merk'};
+    return null};
+}
+function berlinTag(d){try{return new Date(d).toLocaleDateString('sv-SE',{timeZone:'Europe/Berlin'})}catch(e){return iso(new Date(d))}}
+async function prospIndex(force){
+  if(!GH.on||(PR.index&&!force)||prospIndex.busy)return;prospIndex.busy=true;
+  try{const r=await GH.readJson('prospekte/index.json');const neu=!PR.index||PR.index.stand!==r.data.stand;PR.index=r.data;PR.fehler=null;
+    if(neu&&force){PR.laden={};}
+    prospFrisch();
+  }catch(e){if(e.status===404){PR.index={laeden:{},stand:null};prospFrisch()}else PR.fehler='Die Prospekte konnten nicht geladen werden.'}
+  finally{prospIndex.busy=false}
+  if(tab==='angebote')softRender();
+}
+// einmal am Tag frische Prospekte holen lassen (GitHub lädt sie in ca. 1–2 Minuten)
+async function prospFrisch(){
+  const st=PR.index&&PR.index.stand;
+  const alt=!st||berlinTag(st)<todayIso()||Date.now()-new Date(st)>20*36e5;
+  if(!alt||PR.refresh||prospFrisch.done)return;prospFrisch.done=true;
+  try{
+    let zeit=null;try{zeit=(await GH.readJson('prospekte-auftrag.json')).data.zeit}catch(e){if(e.status!==404)return}
+    if(!(zeit&&Date.now()-new Date(zeit)<30*6e4)){
+      const ok=await editFile('prospekte-auftrag.json',d=>{d.zeit=new Date().toISOString()},'Prospekte neu laden',{});if(!ok)return}
+    PR.refresh=true;if(tab==='angebote')softRender();
+    const t0=Date.now();clearInterval(PR.pollT);
+    PR.pollT=setInterval(async()=>{
+      if(Date.now()-t0>6*6e4){clearInterval(PR.pollT);PR.refresh=false;if(tab==='angebote')softRender();return}
+      try{const r=await GH.readJson('prospekte/index.json');if(r.data.stand!==st){clearInterval(PR.pollT);PR.index=r.data;PR.laden={};PR.refresh=false;if(st)toast('Neue Prospekte sind da ✿');if(tab==='angebote')softRender()}}catch(e){}
+    },15e3);
+  }catch(e){}
+}
+async function prospLaden(l){
+  if(PR.laden[l]||prospLaden[l])return;prospLaden[l]=true;
+  try{const r=await GH.readJson(`prospekte/${l}.json`);PR.laden[l]=r.data.angebote||[]}
+  catch(e){PR.laden[l]=e.status===404?[]:null;if(e.status!==404)PR.fehler='Die Angebote konnten nicht geladen werden.'}
+  finally{prospLaden[l]=false}
+  if(tab==='angebote')softRender();
+}
+function prospAuswahl(l){
+  const all=PR.laden[l]||[],t=todayIso(),zeit=S.settings.prospZeit||'jetzt',kat=S.settings.prospKat||'alle';
+  const jetzt=all.filter(o=>!o.v||o.v<=t),bald=all.filter(o=>o.v&&o.v>t);
+  const basis=zeit==='bald'&&bald.length?bald:jetzt;
+  const q=wortListe(PR.q);
+  const gesucht=q.length?basis.filter(o=>{const tx=norm([o.m,o.n,o.d,o.k].join(' '));return q.every(w=>tx.includes(w))}):basis;
+  const kats={};for(const o of gesucht){const g=katGruppe(o);kats[g]=(kats[g]||0)+1}
+  const liste=kat==='alle'||!kats[kat]?gesucht:gesucht.filter(o=>katGruppe(o)===kat);
+  return {jetzt,bald,zeit:basis===bald?'bald':'jetzt',kats,liste,kat:kat==='alle'||!kats[kat]?'alle':kat};
+}
+function prospKarte(o,mk,l){
+  const off=o.a&&o.a>o.p?Math.round((1-o.p/o.a)*100):0,img=prospImg(o),t=todayIso();
+  const wann=o.v&&o.v>t?`ab ${fmtDate(o.v,{weekday:'short',day:'numeric',month:'numeric'})}`:o.b?`bis ${fmtDate(o.b,{weekday:'short',day:'numeric',month:'numeric'})}`:'';
+  const m=mk(o);
+  const markHtml=m?(m.art==='liste'?`<div class="pk-mark">${ic('tick')}Auf deiner Liste</div>`:`<div class="pk-mark merk">♡ Auf deiner Merkliste</div>`):'';
+  const btn=m&&m.direkt?`<button class="pk-add on" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="Von der Einkaufsliste nehmen">${ic('tick')}</button>`
+    :`<button class="pk-add" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="${esc(prospTitel(o))} auf die Einkaufsliste">${ic('plus')}</button>`;
+  return `<div class="pk${m?' mine '+m.art:''}">
+    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:''}<span class="pk-ph">🏷️</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}</div>
+    ${markHtml}
+    <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
+    <div class="pk-f"><div class="pk-p"><b>${eur(o.p)}</b>${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
+    ${wann||o.s?`<div class="pk-v">${esc([wann,o.s].filter(Boolean).join(' · '))}</div>`:''}
+  </div>`;
+}
+function prospListe(l){
+  const a=prospAuswahl(l),mk=prospMarken();
+  const meine=[],rest=[];for(const o of a.liste)(mk(o)?meine:rest).push(o);
+  const zeig=rest.slice(0,PR.limit);
+  return `${meine.length?`<div class="group-h pk-h">${ic('tick')}Passt zu deiner Liste <span class="tag deal">${meine.length}</span></div><div class="pk-grid">${meine.map(o=>prospKarte(o,mk,l)).join('')}</div>`:''}
+    ${meine.length&&rest.length?`<div class="group-h pk-h">Alle weiteren Angebote</div>`:''}
+    ${a.liste.length?`<div class="pk-grid">${zeig.map(o=>prospKarte(o,mk,l)).join('')}</div>${rest.length>zeig.length?`<button class="btn ghost pk-more" data-act="prosp-more">Weitere ${rest.length-zeig.length} Angebote zeigen</button>`:''}`
+      :`<div class="card empty" style="padding:22px"><b style="font-size:16px">Nichts gefunden</b>${PR.q?'Versuch ein anderes Wort.':''}</div>`}`;
+}
+function aktProspLaden(){const ls=S.settings.laeden;let l=S.settings.prospLaden;if(!ls.includes(l))l=ls.find(k=>!(PR.index?.laeden?.[k]?.fehlt))||ls[0];return l}
+function prospNeu(l){const el=$('#prospList');if(el&&tab==='angebote'){const y=$('#main').scrollTop;el.innerHTML=prospListe(l);$('#main').scrollTop=y}else render()}
+function vProspekte(){
+  if(!GH.on)return `<div class="card empty"><div class="em">🔗</div><b>Noch nicht verbunden</b>Gib einmal deinen Zugangscode in den Optionen ein, dann siehst du hier alle Angebote aus den Prospekten.<div style="margin-top:14px"><button class="btn" data-tab="einstellungen">Zu den Optionen</button></div></div>`;
+  prospIndex();
+  const idx=PR.index,ls=S.settings.laeden;
+  const l=aktProspLaden();
+  const chips=`<div class="chips" role="group" aria-label="Laden">${ls.map(k=>{const n=idx?.laeden?.[k]?.anzahl;return `<button class="chip${idx&&!n?' leer':''}" data-act="set-plad" data-v="${k}" aria-pressed="${l===k}"><i class="dot" style="background:${lcol(k)}"></i>${esc(lname(k))}${n?`<span class="cnt">${n}</span>`:''}</button>`}).join('')}</div>`;
+  const banner=PR.refresh?`<div class="card banner"><span class="spin"></span><span class="grow"><b>Neue Prospekte werden geladen…</b> Das dauert ein bis zwei Minuten.</span></div>`
+    :PR.fehler?`<div class="card banner"><span class="tag bad">Problem</span><span class="grow">${esc(PR.fehler)}</span><button class="btn ghost sm" data-act="prosp-retry">Nochmal</button></div>`:'';
+  if(!idx)return chips+banner+`<div class="card empty"><span class="spin"></span><b style="margin-top:8px">Prospekte werden geladen…</b></div>`;
+  const info=idx.laeden?.[l];
+  if(!info||!info.anzahl){
+    return chips+banner+`<div class="card empty"><div class="em">🗞️</div><b>${info&&info.fehlt?`Kein Prospekt von ${esc(lname(l))}`:PR.refresh||!idx.stand?'Kommt gleich':'Gerade keine Angebote'}</b>${info&&info.fehlt?`${esc(lname(l))} veröffentlicht seine Prospekt-Angebote für deine Gegend leider nicht online. Produkte auf deiner Merkliste werden trotzdem weiter gesucht.`:''}</div>`;
+  }
+  if(!PR.laden[l]){prospLaden(l);return chips+banner+`<div class="card empty"><span class="spin"></span><b style="margin-top:8px">Angebote von ${esc(lname(l))} werden geladen…</b></div>`}
+  const a=prospAuswahl(l);
+  const zeitSeg=a.bald.length?`<div class="seg pk-seg"><button data-act="set-pzeit" data-v="jetzt" aria-pressed="${a.zeit==='jetzt'}">Diese Woche · ${a.jetzt.length}</button><button data-act="set-pzeit" data-v="bald" aria-pressed="${a.zeit==='bald'}">Demnächst · ${a.bald.length}</button></div>`:'';
+  const katChips=`<div class="chips" role="group" aria-label="Kategorie"><button class="chip" data-act="set-pkat" data-v="alle" aria-pressed="${a.kat==='alle'}">Alles</button>${KAT_GRUPPEN.filter(([id])=>a.kats[id]).map(([id,name])=>`<button class="chip" data-act="set-pkat" data-v="${id}" aria-pressed="${a.kat===id}">${esc(name)}<span class="cnt">${a.kats[id]}</span></button>`).join('')}</div>`;
+  return chips+banner+`<div class="card pk-tools">
+      <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. Käse" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
+      ${zeitSeg}${katChips}</div>
+    <div id="prospList">${prospListe(l)}</div>
+    ${idx.stand?`<p class="note" style="text-align:center">Stand ${fmtDT(idx.stand)} · Quelle: Prospekte für ${esc(idx.plz||'85354')}</p>`:''}`;
+}
 function vAngebote(){
-  const head=`<div class="view-head"><h2>Angebote</h2>${S.angebote?.aktualisiert?`<span class="sub">Stand ${fmtDT(S.angebote.aktualisiert)}</span>`:''}</div>`;
+  const v=S.settings.angView||'prospekt';
+  const seg=`<div class="seg ang-seg"><button data-act="set-aview" data-v="prospekt" aria-pressed="${v==='prospekt'}">Alle Prospekte</button><button data-act="set-aview" data-v="merk" aria-pressed="${v==='merk'}">Meine Merkliste</button></div>`;
+  if(v==='prospekt')return `<div class="view-head"><h2>Angebote</h2></div>`+seg+vProspekte();
+  return vMerk(seg);
+}
+function vMerk(seg){
+  const head=`<div class="view-head"><h2>Angebote</h2>${S.angebote?.aktualisiert?`<span class="sub">Stand ${fmtDT(S.angebote.aktualisiert)}</span>`:''}</div>`+seg;
   if(!GH.on)return head+`<div class="card empty"><div class="em">🔗</div><b>Noch nicht verbunden</b>Damit jeden Montag um 6 Uhr die Prospekte für dich durchsucht werden, gib einmal deinen Zugangscode in den Optionen ein.<div style="margin-top:14px"><button class="btn" data-tab="einstellungen">Zu den Optionen</button></div></div>`;
   const sel=S.settings.angLaden;
   const watch=(S.merkliste?.produkte||[]).map(p=>p.name||p);
@@ -1259,6 +1433,21 @@ document.addEventListener('click',async e=>{
     case'pick-sugg':{const s=$('#sugg')._list[+b.dataset.i];if(!s)break;
       addItem(s.o?s.o.produkt:s.name,s.laden,s.o?{wahl:wahlVon(s.o)}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
     // Angebote
+    case'set-aview':S.settings.angView=b.dataset.v;save();render();break;
+    case'set-plad':S.settings.prospLaden=b.dataset.v;PR.limit=60;PR.q='';save();render();$('#main').scrollTop=0;break;
+    case'set-pzeit':S.settings.prospZeit=b.dataset.v;PR.limit=60;save();render();break;
+    case'set-pkat':S.settings.prospKat=b.dataset.v;PR.limit=60;save();render();break;
+    case'prosp-more':PR.limit+=90;{const el=$('#prospList');if(el)el.innerHTML=prospListe(aktProspLaden())}break;
+    case'prosp-retry':PR.fehler=null;PR.index=null;PR.laden={};prospIndex();render();break;
+    case'prosp-add':{const l=b.dataset.l,o=(PR.laden[l]||[]).find(x=>String(x.i)===b.dataset.i);if(!o)break;
+      const m=prospMarken()(o),titel=prospTitel(o);
+      const wahl={laden:l,titel,preis:o.p,alterPreis:o.a&&o.a>o.p?o.a:null,bis:o.b||null,normal:false,ki:false,info:o.d&&o.d!=='Details im Prospekt'?o.d:'',grundpreis:o.g||null,einheit:o.e||''};
+      if(m&&m.direkt){const it=m.it,i=S.einkauf.indexOf(it);S.einkauf.splice(i,1);save();prospNeu(l);
+        toast(`${titel} ist wieder von der Liste`,4000,{label:'Rückgängig',fn:()=>{S.einkauf.splice(i,0,it);save();prospNeu(l)}});break}
+      if(m&&m.art==='liste'){const it=m.it,alt={laden:it.laden,wahl:it.wahl,prospekt:it.prospekt};it.laden=l;it.wahl=wahl;it.prospekt=o.i;save();prospNeu(l);
+        toast(`${it.name}: Angebot von ${lname(l)} gewählt`,4000,{label:'Rückgängig',fn:()=>{Object.assign(it,alt);if(!alt.prospekt)delete it.prospekt;save();prospNeu(l)}});break}
+      addItem(titel,l,{wahl,prospekt:o.i});prospNeu(l);if(navigator.vibrate)navigator.vibrate(12);
+      toast(`${titel} ist auf der Einkaufsliste`);break}
     case'set-alad':S.settings.angLaden=b.dataset.v;save();render();break;
     case'unwatch':b.disabled=true;await removeWatch(b.dataset.name);break;
     case'search-now':{b.disabled=true;const ok=await editMerkliste(d=>{d.suche=new Date().toISOString()},'Suche per Hand gestartet');if(ok){toast('Suche gestartet');startPolling()}else render();break}
@@ -1323,6 +1512,7 @@ document.addEventListener('submit',async e=>{
 });
 document.addEventListener('input',e=>{
   if(e.target.id==='addName'){suggQ=e.target.value;showSugg()}
+  if(e.target.id==='prospQ'){PR.q=e.target.value;PR.limit=60;clearTimeout(PR.qT);PR.qT=setTimeout(()=>{const el=$('#prospList');if(el)el.innerHTML=prospListe(aktProspLaden())},120)}
   if(e.target.id==='patOp'){S.settings.patOp=+e.target.value;save();applyTheme()}
   if(e.target.id==='accentPick'){S.settings.accent=e.target.value;save();applyTheme()}
   if(e.target.id==='bgPick'){S.settings.bg=e.target.value;save();applyTheme()}
