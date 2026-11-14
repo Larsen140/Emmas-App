@@ -389,6 +389,7 @@ nav.tabs{isolation:isolate}
 .herz-opt input{width:20px;height:20px;accent-color:#e2667f}
 .herzchen{color:#e2667f}
 @media (prefers-reduced-motion:reduce){.lv-h,.pk.sk .pk-img,.pk.sk i,.vgl-b i{animation:none}}
+.pk-p b.pk-r{font-family:var(--f-body,inherit);font-size:17px;font-weight:800;color:var(--bad);line-height:1.2}
 </style>
 </head>
 <body>
@@ -404,8 +405,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.5';
-const BUILD='2026-11-14-2245'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.6';
+const BUILD='2026-11-14-2330'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -429,6 +430,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.6',d:'14.11.2026',t:'HIT und Rossmann',items:[
+    ['Neu','Unter Angebote gibt es jetzt auch die Prospekt-Angebote von HIT, aus dem Markt in Erding.'],
+    ['Neu','Bei Rossmann siehst du die aktuellen Rabatt-Aktionen aus dem Prospekt.']]},
   {v:'2.5',d:'14.11.2026',t:'Noch schöner und schlauer',items:[
     ['Neu','Ladenvergleich: Die App zeigt, in welchem Laden deine ganze Einkaufsliste am günstigsten ist.'],
     ['Neu','Rezept-Zutaten einfügen: Zutatenliste reinkopieren, alles landet auf einmal auf der Einkaufsliste.'],
@@ -1018,7 +1022,7 @@ function statBuchen(it){
 // günstigstes passendes Prospekt-Angebot eines Ladens für einen Listeneintrag
 function prospPreis(it,l){
   const arr=PR.laden[l];if(!arr)return null;const w=wortListe(it.produkt||it.name),t=todayIso();if(!w.length)return null;
-  let best=null;for(const o of arr){if(o.v&&o.v>t)continue;if(nameTrifft(w,o)&&(!best||o.p<best.p))best=o}return best;
+  let best=null;for(const o of arr){if(!o.p||(o.v&&o.v>t))continue;if(nameTrifft(w,o)&&(!best||o.p<best.p))best=o}return best;
 }
 function vergleichVorladen(){
   if(!GH.on||vergleichVorladen.done)return;vergleichVorladen.done=true;
@@ -1188,17 +1192,17 @@ function itemSheet(it){
 /* ----- Prospekte: alle Angebote pro Laden ----- */
 const PR={index:null,laeden:{},laden:{},q:'',limit:60,refresh:false,pollT:null,fehler:null};
 const KAT_GRUPPEN=[
-  ['nonfood','Haushalt & mehr',/deko|textil|kleidung|schuh|geraet|werkzeug|garten|moebel|spielzeug|buecher|lampe|leucht|geschirr|kuechen|zubehoer|batterie|elektro|multimedia|computer|handy|sport|camping|auto|fahrrad|heimwerk|baumarkt|pflanze|blume|tier|haustier|praesent|geschenk|koffer|tasche|bett|matratze|teppich|vorhang|bad|beleuchtung|kerze|weihnacht|reise|spiel/],
-  ['drogerie','Drogerie',/pflege|dusch|shampoo|haar|creme|lotion|deo|zahn|kosmetik|nahrungsergaenzung|wasch|putz|reinig|papier|windel|baby|hygiene|rasier|parfum|duft|make up|nagel|seife|gesicht|sonnen|vitamin|medizin|apotheke|spuel/],
+  ['nonfood','Haushalt & mehr',/wohnen|deko|textil|kleidung|schuh|geraet|werkzeug|garten|moebel|spielzeug|buecher|lampe|leucht|geschirr|kuechen|zubehoer|batterie|elektro|multimedia|computer|handy|sport|camping|auto|fahrrad|heimwerk|baumarkt|pflanze|blume|tier|haustier|praesent|geschenk|koffer|tasche|bett|matratze|teppich|vorhang|bad|beleuchtung|kerze|weihnacht|reise|spiel/],
+  ['drogerie','Drogerie',/drogerie|pflege|dusch|shampoo|haar|creme|lotion|deo|zahn|kosmetik|nahrungsergaenzung|wasch|putz|reinig|papier|windel|baby|hygiene|rasier|parfum|duft|make up|nagel|seife|gesicht|sonnen|vitamin|medizin|apotheke|spuel/],
   ['getraenke','Getränke',/drink|getraenk|bier|wein|whisk|spirituose|saft|wasser|kaffee|tee|sekt|likoer|gin|rum|vodka|wodka|schorle|limonade|cola|energy|sirup|champagner|prosecco|kakao/],
   ['suess','Süßes & Snacks',/schoko|keks|suess|fruchtgummi|bonbon|chips|snack|knabber|nuss|nuesse|riegel|praline|lebkuchen|gebaeck|^eis$|speiseeis|dessert|marzipan|stollen/],
   ['obst','Obst & Gemüse',/obst|gemuese|fruechte|frucht|salat|kartoffel|pilz|kraeuter|beere|zitrus|apfel|aepfel|banane|tomate|zwiebel|trauben/],
-  ['fleisch','Fleisch & Fisch',/fleisch|gefluegel|wurst|wuerst|schinken|salami|fisch|meeres|hack|lachs|aufschnitt|garnele|haehnchen|pute|steak|grill/],
-  ['milch','Milch, Käse & Eier',/kaese|milch|joghurt|quark|butter|eier|sahne|pudding|margarine|aufstrich|feinkost/],
+  ['fleisch','Fleisch & Fisch',/metzger|meer bar|meerbar|fleisch|gefluegel|wurst|wuerst|schinken|salami|fisch|meeres|hack|lachs|aufschnitt|garnele|haehnchen|pute|steak|grill/],
+  ['milch','Milch, Käse & Eier',/molkerei|kuehlregal|kaese|milch|joghurt|quark|butter|eier|sahne|pudding|margarine|aufstrich|feinkost/],
   ['brot','Brot & Backen',/brot|broetchen|back|kuchen|mehl|toast|zucker|hefe/],
   ['vorrat','Vorrat & Tiefkühl',/./]];
 function katGruppe(o){const k=norm(o.k||'');if(!k)return 'vorrat';for(const [id,,re] of KAT_GRUPPEN)if(re.test(k))return id;return 'vorrat'}
-function prospImg(o){return o.img?`https://mg2de.b-cdn.net/api/v1/offers/${o.i}/images/default/0/small.jpg`:''}
+function prospImg(o){return o.u?o.u:o.img?`https://mg2de.b-cdn.net/api/v1/offers/${o.i}/images/default/0/small.jpg`:''}
 function prospTitel(o){const n=o.n||'';return o.m&&!norm(n).includes(norm(o.m))?`${o.m} ${n}`:n}
 // passt ein Eintrag (z. B. "Milch") zu einem Prospekt-Angebot ("Weihenstephan Frische Vollmilch")?
 function wortListe(s){return norm(s).split(' ').filter(w=>w.length>1)}
@@ -1268,7 +1272,7 @@ function prospAuswahl(l){
   return {jetzt,bald,zeit:basis===bald?'bald':'jetzt',kats,liste,kat:kat==='alle'||!kats[kat]?'alle':kat};
 }
 function prospKarte(o,mk,l){
-  const off=o.a&&o.a>o.p?Math.round((1-o.p/o.a)*100):0,img=prospImg(o),t=todayIso();
+  const off=o.p&&o.a&&o.a>o.p?Math.round((1-o.p/o.a)*100):0,img=prospImg(o),t=todayIso();
   const wann=o.v&&o.v>t?`ab ${fmtDate(o.v,{weekday:'short',day:'numeric',month:'numeric'})}`:o.b?`bis ${fmtDate(o.b,{weekday:'short',day:'numeric',month:'numeric'})}`:'';
   const m=mk(o);
   const markHtml=m?(m.art==='liste'?`<div class="pk-mark">${ic('tick')}Auf deiner Liste</div>`:`<div class="pk-mark merk">♡ Auf deiner Merkliste</div>`):'';
@@ -1278,7 +1282,7 @@ function prospKarte(o,mk,l){
     <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">🏷️</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}</div>
     ${markHtml}
     <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
-    <div class="pk-f"><div class="pk-p"><b>${eur(o.p)}</b>${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
+    <div class="pk-f"><div class="pk-p">${o.p?`<b>${eur(o.p)}</b>`:`<b class="pk-r">${esc(o.r||'Angebot')}</b>`}${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.p&&o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
     ${wann||o.s?`<div class="pk-v">${esc([wann,o.s].filter(Boolean).join(' · '))}</div>`:''}
   </div>`;
 }
@@ -1313,7 +1317,7 @@ function vProspekte(){
   return chips+banner+`<div class="card pk-tools">
       <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. Käse" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
       ${zeitSeg}${katChips}</div>
-    ${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
+    ${info.quelle?`<p class="note" style="margin:0 4px">${info.quelle==='auszug'?`${esc(lname(l))} zeigt online nur einen Auszug aus dem Prospekt, meist Rabatt-Aktionen.`:`Angebote vom Markt ${esc(info.quelle)}, dem nächsten bei Freising.`}</p>`:''}${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
     ${idx.stand?`<p class="note" style="text-align:center">Stand ${fmtDT(idx.stand)} · Quelle: Prospekte für ${esc(idx.plz||'85354')}</p>`:''}`;
 }
 function vAngebote(){
@@ -1576,12 +1580,12 @@ document.addEventListener('click',async e=>{
     case'prosp-retry':PR.fehler=null;PR.index=null;PR.laden={};prospIndex();render();break;
     case'prosp-add':{const l=b.dataset.l,o=(PR.laden[l]||[]).find(x=>String(x.i)===b.dataset.i);if(!o)break;
       const m=prospMarken()(o),titel=prospTitel(o);
-      const wahl={laden:l,titel,preis:o.p,alterPreis:o.a&&o.a>o.p?o.a:null,bis:o.b||null,normal:false,ki:false,info:o.d&&o.d!=='Details im Prospekt'?o.d:'',grundpreis:o.g||null,einheit:o.e||''};
+      const wahl=!o.p?null:{laden:l,titel,preis:o.p,alterPreis:o.a&&o.a>o.p?o.a:null,bis:o.b||null,normal:false,ki:false,info:o.d&&o.d!=='Details im Prospekt'?o.d:'',grundpreis:o.g||null,einheit:o.e||''};
       if(m&&m.direkt){const it=m.it,i=S.einkauf.indexOf(it);S.einkauf.splice(i,1);save();prospNeu(l);
         toast(`${titel} ist wieder von der Liste`,4000,{label:'Rückgängig',fn:()=>{S.einkauf.splice(i,0,it);save();prospNeu(l)}});break}
       if(m&&m.art==='liste'){const it=m.it,alt={laden:it.laden,wahl:it.wahl,prospekt:it.prospekt};it.laden=l;it.wahl=wahl;it.prospekt=o.i;save();prospNeu(l);
         toast(`${it.name}: Angebot von ${lname(l)} gewählt`,4000,{label:'Rückgängig',fn:()=>{Object.assign(it,alt);if(!alt.prospekt)delete it.prospekt;save();prospNeu(l)}});break}
-      addItem(titel,l,{wahl,prospekt:o.i});prospNeu(l);{const nb=document.querySelector(`.pk-add[data-i="${o.i}"]`);if(nb){nb.classList.add('pop')}const tb=document.querySelector('.tab[data-tab=einkauf]');if(tb){tb.classList.remove('hop');void tb.offsetWidth;tb.classList.add('hop')}}if(navigator.vibrate)navigator.vibrate(12);
+      addItem(titel,l,{wahl,prospekt:o.i,...(o.r?{notiz:o.r}:{})});prospNeu(l);{const nb=document.querySelector(`.pk-add[data-i="${o.i}"]`);if(nb){nb.classList.add('pop')}const tb=document.querySelector('.tab[data-tab=einkauf]');if(tb){tb.classList.remove('hop');void tb.offsetWidth;tb.classList.add('hop')}}if(navigator.vibrate)navigator.vibrate(12);
       toast(`${titel} ist auf der Einkaufsliste`);break}
     case'set-alad':S.settings.angLaden=b.dataset.v;save();render();break;
     case'unwatch':b.disabled=true;await removeWatch(b.dataset.name);break;
