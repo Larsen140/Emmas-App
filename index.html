@@ -352,6 +352,43 @@ nav.tabs{isolation:isolate}
 .pk-add.on{background:var(--good);color:#fff}
 .pk-v{padding:0 11px 10px;font-size:11.5px;font-weight:700;color:var(--muted)}
 .pk-more{width:100%;margin-top:4px}
+.pk-img img{opacity:0;transform:scale(.96);transition:opacity .45s ease,transform .45s ease}
+.pk-img img.da{opacity:1;transform:none}
+.pk-add.pop{animation:checkpop .45s cubic-bezier(.3,1.7,.5,1)}
+.tab.hop{animation:tabpop .5s cubic-bezier(.3,1.7,.5,1)}
+.pk.sk{animation:none}
+.pk.sk .pk-img{background:var(--line)}
+.pk.sk .pk-b{padding:12px 11px 14px;display:grid;gap:7px}
+.pk.sk i{display:block;height:11px;border-radius:6px;background:var(--line)}
+.pk.sk i.s{width:45%;height:20px}
+.pk.sk .pk-img,.pk.sk i{background:linear-gradient(100deg,var(--line) 30%,color-mix(in srgb,var(--surface) 80%,var(--line)) 50%,var(--line) 70%);background-size:300% 100%;animation:shim 1.3s linear infinite}
+@keyframes shim{from{background-position:100% 0}to{background-position:-100% 0}}
+.pk:active{transform:scale(.985);transition:transform .15s}
+.lv{display:flex;gap:12px;align-items:flex-start;padding:14px 10px 14px 16px;position:relative;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb,#f4a7b9 26%,var(--card)),color-mix(in srgb,var(--accent) 14%,var(--card)));transition:opacity .3s,transform .3s}
+.lv.weg{opacity:0;transform:translateY(-8px) scale(.98)}
+.lv-h{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e2667f;color:#fff;box-shadow:0 6px 16px -6px #e2667f;animation:beat 2.4s ease-in-out infinite}
+.lv-h svg{width:20px;height:20px;fill:currentColor;stroke:none}
+@keyframes beat{0%,60%,100%{transform:scale(1)}10%{transform:scale(1.14)}20%{transform:scale(.98)}30%{transform:scale(1.1)}}
+.lv-b{flex:1;min-width:0}
+.lv-t{font-family:var(--f-display);font-size:18px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.lv-f{font-size:12px;font-weight:800;color:var(--muted);margin-top:3px;font-style:italic}
+.lv-cd{margin-top:8px;display:inline-block;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,#e2667f 16%,transparent);color:color-mix(in srgb,#e2667f 75%,var(--text))}
+.vgl h3{display:flex;align-items:center;gap:7px;margin:0 0 10px}
+.vgl h3 svg{width:18px;height:18px;color:var(--accent)}
+.vgl-best{display:flex;align-items:center;gap:8px;font-size:17px}
+.vgl-best span{margin-left:auto;font-family:var(--f-display);font-size:24px;font-weight:600;color:var(--good)}
+.vgl-bars{display:grid;gap:7px}
+.vgl-r{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px;font-weight:700}
+.vgl-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.vgl-b{height:10px;border-radius:6px;background:var(--line);overflow:hidden}
+.vgl-b i{display:block;height:100%;border-radius:6px;transform-origin:left;animation:grow .7s cubic-bezier(.2,.85,.25,1) both}
+@keyframes grow{from{transform:scaleX(0)}}
+.herz-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--line);font-weight:700;cursor:pointer}
+.herz-opt span{display:inline-flex;align-items:center;gap:6px}
+.herz-opt svg{width:18px;height:18px;color:#e2667f}
+.herz-opt input{width:20px;height:20px;accent-color:#e2667f}
+.herzchen{color:#e2667f}
+@media (prefers-reduced-motion:reduce){.lv-h,.pk.sk .pk-img,.pk.sk i,.vgl-b i{animation:none}}
 </style>
 </head>
 <body>
@@ -367,8 +404,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.4';
-const BUILD='2026-11-14-2115'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.5';
+const BUILD='2026-11-14-2245'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -392,6 +429,12 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.5',d:'14.11.2026',t:'Noch schöner und schlauer',items:[
+    ['Neu','Ladenvergleich: Die App zeigt, in welchem Laden deine ganze Einkaufsliste am günstigsten ist.'],
+    ['Neu','Rezept-Zutaten einfügen: Zutatenliste reinkopieren, alles landet auf einmal auf der Einkaufsliste.'],
+    ['Neu','Im Preisrechner siehst du, wie viel du diesen Monat gespart und eingekauft hast.'],
+    ['Neu','Jeden Tag eine kleine Nachricht ♥ und Countdowns für besondere Termine.'],
+    ['Besser','Sanftere Animationen, Bilder blenden weich ein, schönere Ladeanzeige.']]},
   {v:'2.4',d:'14.11.2026',t:'Alle Prospekt-Angebote',items:[
     ['Neu','Unter Angebote siehst du jetzt alle Angebote aus den aktuellen Prospekten. Tipp einfach auf einen Laden.'],
     ['Neu','Suchfeld und Kategorien, damit du schnell findest, was du brauchst. Angebote ab nächster Woche stehen unter „Demnächst“.'],
@@ -466,6 +509,8 @@ const UPDATES=[
 ];
 const TABS=[['einkauf','Einkauf','cart'],['angebote','Angebote','tag'],['termine','Termine','cal'],['todos','To-dos','check'],['updates','Updates','spark'],['einstellungen','Optionen','gear']];
 const ICONS={
+  book:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h7M9 11.5h5"/>',
+  heart:'<path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"/>',
   tick:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   cart:'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h2.6l2.3 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1l1.6-6.8H6.2"/>',
   tag:'<path d="M3 12.2V4.5A1.5 1.5 0 0 1 4.5 3h7.7l8.8 8.8a1.5 1.5 0 0 1 0 2.1l-7.1 7.1a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8" cy="8" r="1.6"/>',
@@ -595,6 +640,7 @@ async function loadRemote(quiet){
   try{
     const [m,a]=await Promise.all([GH.readJson('merkliste.json'),GH.readJson('angebote.json')]);
     S.merkliste=m.data;S.angebote=a.data;save();
+    GH.readJson('liebe.json').then(r=>{const n=(r.data.nachrichten||[]).filter(x=>typeof x==='string'&&x.trim());if(JSON.stringify(n)!==JSON.stringify(S.liebe||[])){S.liebe=n;save();if(tab==='einkauf')softRender()}}).catch(()=>{});
     const kiLaeuft=a.data.ki&&a.data.ki.status==='läuft';
     if(searching&&a.data.aktualisiert&&new Date(a.data.aktualisiert).getTime()>searching-60e3){
       if(!kiLaeuft){searching=null;toast('Alle Preise sind da ✿')}
@@ -960,6 +1006,81 @@ function storeChips(sel,act){
 function storeSelect(id,val,withNone=true,noneLabel='Ohne Laden'){
   return `<select id="${id}" aria-label="Laden">${withNone?`<option value="">${noneLabel}</option>`:''}${S.settings.laeden.map(k=>`<option value="${k}" ${val===k?'selected':''}>${esc(lname(k))}</option>`).join('')}</select>`;
 }
+
+/* ----- Statistik, Ladenvergleich, Rezept, Liebe ----- */
+function statBuchen(it){
+  S.stat=S.stat||{};
+  if(it.done){const p=effPrice(it),q=qty(it),m=todayIso().slice(0,7);
+    const g=p.deal&&p.normal!=null&&p.normal>p.preis?(p.normal-p.preis)*q:0,a=(p.preis||0)*q;
+    const st=S.stat[m]=S.stat[m]||{g:0,a:0,n:0};st.g+=g;st.a+=a;st.n++;it.doneStat={m,g,a}}
+  else if(it.doneStat){const d=it.doneStat,st=S.stat[d.m];if(st){st.g=Math.max(0,st.g-d.g);st.a=Math.max(0,st.a-d.a);st.n=Math.max(0,st.n-1)}delete it.doneStat}
+}
+// günstigstes passendes Prospekt-Angebot eines Ladens für einen Listeneintrag
+function prospPreis(it,l){
+  const arr=PR.laden[l];if(!arr)return null;const w=wortListe(it.produkt||it.name),t=todayIso();if(!w.length)return null;
+  let best=null;for(const o of arr){if(o.v&&o.v>t)continue;if(nameTrifft(w,o)&&(!best||o.p<best.p))best=o}return best;
+}
+function vergleichVorladen(){
+  if(!GH.on||vergleichVorladen.done)return;vergleichVorladen.done=true;
+  (async()=>{await prospIndex();for(const l of S.settings.laeden)if(PR.index?.laeden?.[l]?.anzahl)prospLaden(l)})();
+}
+function ladenVergleich(){
+  const open=S.einkauf.filter(i=>!i.done);if(open.length<2)return null;
+  vergleichVorladen();
+  const ls=S.settings.laeden;
+  // Preis jedes Artikels in jedem Laden (echt oder ungefähr)
+  const tab_=open.map(it=>{const q=qty(it),row={};for(const l of ls){
+      let p=effPrice({...it,laden:l,wahl:it.wahl&&it.wahl.laden===l?it.wahl:null});
+      const pr=prospPreis(it,l);if(pr&&(p.preis==null||p.est||pr.p<p.preis))p={preis:pr.p,deal:true};
+      if(p.preis!=null)row[l]={v:p.preis*q,echt:!p.est}}return row});
+  // Läden mit echten Preisen für mindestens die Hälfte der Artikel
+  let laeden=ls.filter(l=>tab_.filter(r=>r[l]&&r[l].echt).length>=Math.max(1,Math.ceil(open.length/2)));
+  if(laeden.length<2)laeden=ls.filter(l=>tab_.some(r=>r[l]&&r[l].echt)).sort((x,y)=>tab_.filter(r=>r[y]&&r[y].echt).length-tab_.filter(r=>r[x]&&r[x].echt).length).slice(0,3);
+  const rows=tab_.filter(r=>laeden.every(l=>r[l])&&laeden.some(l=>r[l].echt));
+  if(laeden.length<2||rows.length<1)return null;
+  const res=laeden.map(l=>({l,sum:rows.reduce((s_,r)=>s_+r[l].v,0)})).sort((x,y)=>x.sum-y.sum);
+  return {res,n:open.length,m:rows.length};
+}
+function vergleichHtml(){
+  const v=ladenVergleich();if(!v)return '';const best=v.res[0],teuer=v.res[v.res.length-1],spar=teuer.sum-best.sum,max=teuer.sum;
+  return `<div class="card pad vgl"><h3>${ic('tag')}Günstigster Laden</h3>
+    <div class="vgl-best"><i class="dot" style="background:${lcol(best.l)}"></i><b>${esc(lname(best.l))}</b><span>${eur(best.sum)}</span></div>
+    ${spar>.5?`<p class="note" style="margin:2px 0 8px">Bis zu <b style="color:var(--good)">${eur(spar)}</b> günstiger als bei ${esc(lname(teuer.l))}</p>`:''}
+    <div class="vgl-bars">${v.res.slice(0,5).map((r,i)=>`<div class="vgl-r"><span class="vgl-n">${esc(lname(r.l))}</span><span class="vgl-b"><i style="width:${Math.max(8,Math.round(r.sum/max*100))}%;background:${lcol(r.l)};animation-delay:${i*.06}s"></i></span><b>${eur(r.sum)}</b></div>`).join('')}</div>
+    <p class="note small" style="margin:8px 0 0">Verglichen: ${v.m} von ${v.n} Artikeln, mit Prospekt-Angeboten und Normalpreisen.</p></div>`;
+}
+function monatHtml(){
+  const m=todayIso().slice(0,7),st=(S.stat||{})[m];if(!st||!st.n||(st.a<.005&&st.g<.005))return '';
+  return `<div class="ln"><span>${new Date().toLocaleDateString('de-DE',{month:'long'})}: gespart</span><b style="color:var(--good)">${eur(st.g)}</b></div><div class="ln"><span>${new Date().toLocaleDateString('de-DE',{month:'long'})}: eingekauft</span><b>${eur(st.a)}</b></div>`;
+}
+const MENGE_RE=/^\s*(?:[-•*·–]\s*)?(?:ca\.?\s*)?(?:[\d.,/½¼¾⅓⅔]+\s*(?:-\s*[\d.,]+\s*)?)?(?:(?:g|gr|gramm|kg|mg|ml|l|liter|cl|dl|el|tl|esslöffel|teelöffel|stk|stück|prise[n]?|pck|päckchen|packung(?:en)?|pkg|dose[n]?|bund|zehe[n]?|becher|tasse[n]?|scheibe[n]?|glas|gläser|handvoll|msp|zweig[e]?|blatt|blätter|würfel|tüte[n]?|flasche[n]?|kopf|knolle[n]?)\.?\s+)?(?:(?:große?n?|kleine?n?|mittelgroße?n?|frische?n?)\s+)?/i;
+function rezeptZeilen(txt){
+  const out=[],seen=new Set(S.einkauf.filter(i=>!i.done).map(i=>norm(i.name)));
+  for(let z of txt.split(/\n|;/)){z=z.replace(MENGE_RE,'').replace(/\(.*?\)/g,'').replace(/,.*$/,'').replace(/\s+/g,' ').trim();
+    if(z.length<2||/^(zutaten|für|zubereitung|außerdem)\b/i.test(z))continue;z=z[0].toUpperCase()+z.slice(1);
+    const k=norm(z);if(!k||seen.has(k))continue;seen.add(k);out.push(z)}
+  return out;
+}
+function rezeptSheet(){
+  openSheet(`<div class="sheet-head"><h3>Rezept-Zutaten</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div>
+  <p class="note" style="margin-top:0">Füge die Zutatenliste aus einem Rezept ein, eine Zutat pro Zeile. Mengen wie „200 g“ oder „2 EL“ entfernt die App von selbst.</p>
+  <div class="field full"><textarea id="rezeptTxt" rows="7" placeholder="200 g Spaghetti&#10;2 Zehen Knoblauch&#10;1 Dose Tomaten&#10;Parmesan"></textarea></div>
+  <div id="rezeptVor" class="chips" style="flex-wrap:wrap;margin-top:10px"></div>
+  <div class="sheet-actions"><span></span><button class="btn" data-act="rezept-add">${ic('plus')}Auf die Liste</button></div>`);
+}
+const LIEBE_STANDARD=['Du bist das Beste, was mir je passiert ist ♥','Ich bin so stolz auf dich.','Heute schon gelächelt? Ich denk an dich ♥','Mit dir ist jeder Tag schöner.','Ich hab dich lieb, Emma ✿'];
+function herzTermine(){
+  const t=todayIso();return S.termine.filter(e=>e.herz).map(e=>({...e,next:nextOcc(e,t)})).filter(e=>e.next).sort((a,b)=>a.next.localeCompare(b.next));
+}
+function liebeHtml(){
+  const t=todayIso();if(S.liebeZu===t)return '';
+  const list=(S.liebe&&S.liebe.length?S.liebe:LIEBE_STANDARD);
+  const tag=Math.floor(new Date(t+'T12:00')/864e5);const msg=list[tag%list.length];
+  const h=herzTermine()[0];let cd='';
+  if(h){const d=Math.round((new Date(h.next+'T12:00')-new Date(t+'T12:00'))/864e5);
+    cd=d===0?`<div class="lv-cd"><b>Heute</b> ist ${esc(h.title)} ♥</div>`:d<=400?`<div class="lv-cd">Noch <b>${d}</b> ${d===1?'Tag':'Tage'} bis ${esc(h.title)}</div>`:''}
+  return `<div class="card lv"><span class="lv-h" aria-hidden="true">${ic('heart')}</span><div class="lv-b"><div class="lv-t">${esc(msg)}</div><div class="lv-f">von Larsen</div>${cd}</div><button class="icon-btn" data-act="liebe-zu" aria-label="Für heute ausblenden">${ic('x')}</button></div>`;
+}
 function vEinkauf(){
   const sel=S.settings.einkaufLaden;
   const items=S.einkauf.filter(it=>sel==='alle'||it.laden===sel);
@@ -993,6 +1114,7 @@ function vEinkauf(){
     <div class="lines">
       <div class="ln"><span>Im Wagen</span><b>${eur(inCart)}</b></div>
       <div class="ln"><span>Noch offen</span><b>${eur(rest)}</b></div>
+      ${monatHtml()}
       ${saved>0?`<div class="ln"><span>Gespart durch Angebote</span><b style="color:var(--good)">${eur(saved)}</b></div>`:''}
       ${sel==='alle'&&Object.keys(byStore).length>1?`<div style="height:1px;background:var(--line);margin:4px 0"></div>${Object.entries(byStore).sort((x,y)=>{const o=[...S.settings.laeden,''];return o.indexOf(x[0])-o.indexOf(y[0])}).map(([k,v])=>`<div class="ln"><span><i class="dot" style="background:${k?lcol(k):'var(--muted)'}"></i>${esc(k?lname(k):'Ohne Laden')}</span><b>${eur(v)}</b></div>`).join('')}`:''}
       ${noPrice?`<div class="ln"><span class="small">${noPrice} Artikel noch ohne Preis</span></div>`:''}
@@ -1000,7 +1122,8 @@ function vEinkauf(){
     </div></div>`;
   const openNames=new Set(S.einkauf.filter(i=>!i.done).map(i=>norm(i.name)));
   const quick=Object.values(S.haeufig||{}).filter(h=>!openNames.has(norm(h.name))).sort((a,b)=>b.n-a.n||b.t-a.t).slice(0,10);
-  return `<div class="view-head"><h2>Einkaufsliste</h2><div class="head-actions"><span class="sub">${open.length} offen</span>${S.einkauf.length?`<button class="icon-btn" data-act="share-list" aria-label="Liste teilen">${ic('share')}</button>`:''}</div></div>
+  return `<div class="view-head"><h2>Einkaufsliste</h2><div class="head-actions"><span class="sub">${open.length} offen</span><button class="icon-btn" data-act="rezept" aria-label="Rezept-Zutaten einfügen">${ic('book')}</button>${S.einkauf.length?`<button class="icon-btn" data-act="share-list" aria-label="Liste teilen">${ic('share')}</button>`:''}</div></div>
+  ${liebeHtml()}
   ${storeChips(sel,'set-elad')}
   <div class="cols"><div class="sec">
     <form class="card addbar" data-form="add-item" autocomplete="off">
@@ -1011,7 +1134,7 @@ function vEinkauf(){
     </form>
     ${quick.length?`<div class="quick" aria-label="Schnell hinzufügen">${quick.map(h=>`<button class="chip" data-act="quick-add" data-n="${esc(h.name)}" data-l="${h.laden||''}"><i>+</i>${esc(h.name)}${h.laden?`<span class="dot" style="background:${lcol(h.laden)}"></span>`:''}</button>`).join('')}</div>`:''}
     ${listHtml}
-  </div><div class="side">${calc}</div></div>`;
+  </div><div class="side">${calc}${sel==='alle'?vergleichHtml():''}</div></div>`;
 }
 function suggestions(q){
   const n=norm(q);if(n.length<2)return [];
@@ -1079,10 +1202,17 @@ function prospImg(o){return o.img?`https://mg2de.b-cdn.net/api/v1/offers/${o.i}/
 function prospTitel(o){const n=o.n||'';return o.m&&!norm(n).includes(norm(o.m))?`${o.m} ${n}`:n}
 // passt ein Eintrag (z. B. "Milch") zu einem Prospekt-Angebot ("Weihenstephan Frische Vollmilch")?
 function wortListe(s){return norm(s).split(' ').filter(w=>w.length>1)}
+const KEIN_TREFFER=['leberkaese','fleischkaese','erdnussbutter','kokosmilch','sonnenmilch','koerpermilch','reinigungsmilch'];
 function nameTrifft(woerter,o){
   if(!woerter.length)return false;
-  const tw=(o._tw||(o._tw=norm(((o.m||'')+' '+(o.n||'')).replace(/(\S)-(?=\S)/g,'$1')).split(' ')));
-  return woerter.every(w=>tw.some(t=>t===w||(t.length>w.length&&t.endsWith(w))));
+  const tok=s_=>norm(String(s_||'').replace(/(\S)-(?=\S)/g,'$1')).split(' ').filter(Boolean);
+  const mt=(o._mt||(o._mt=tok(o.m))),nt=(o._nt||(o._nt=tok(o.n).filter(t=>!/^\d+$|^\d*(g|kg|ml|l|er|x|stk|xxl|xl)$/.test(t))));
+  const hat=(arr,w)=>arr.some(t=>t===w||(t.length>w.length&&t.endsWith(w)));
+  if(mt.length&&woerter.every(w=>mt.includes(w)))return true; // Marke gesucht ("Red Bull")
+  if(!woerter.every(w=>hat(mt.concat(nt),w)))return false;
+  const kopf=nt[nt.length-1]||'',last=woerter[woerter.length-1];
+  if(!(kopf===last||kopf.endsWith(last)))return false; // "Milch Reis" ist kein Milch
+  return !KEIN_TREFFER.some(k=>kopf.endsWith(k)&&!last.endsWith(k));
 }
 function prospMarken(){
   const liste=S.einkauf.filter(it=>!it.done).map(it=>({it,w:wortListe(it.produkt||it.name)}));
@@ -1125,7 +1255,7 @@ async function prospLaden(l){
   try{const r=await GH.readJson(`prospekte/${l}.json`);PR.laden[l]=r.data.angebote||[]}
   catch(e){PR.laden[l]=e.status===404?[]:null;if(e.status!==404)PR.fehler='Die Angebote konnten nicht geladen werden.'}
   finally{prospLaden[l]=false}
-  if(tab==='angebote')softRender();
+  if(tab==='angebote'||tab==='einkauf')softRender();
 }
 function prospAuswahl(l){
   const all=PR.laden[l]||[],t=todayIso(),zeit=S.settings.prospZeit||'jetzt',kat=S.settings.prospKat||'alle';
@@ -1145,7 +1275,7 @@ function prospKarte(o,mk,l){
   const btn=m&&m.direkt?`<button class="pk-add on" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="Von der Einkaufsliste nehmen">${ic('tick')}</button>`
     :`<button class="pk-add" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="${esc(prospTitel(o))} auf die Einkaufsliste">${ic('plus')}</button>`;
   return `<div class="pk${m?' mine '+m.art:''}">
-    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`:''}<span class="pk-ph">🏷️</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}</div>
+    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">🏷️</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}</div>
     ${markHtml}
     <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
     <div class="pk-f"><div class="pk-p"><b>${eur(o.p)}</b>${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
@@ -1176,7 +1306,7 @@ function vProspekte(){
   if(!info||!info.anzahl){
     return chips+banner+`<div class="card empty"><div class="em">🗞️</div><b>${info&&info.fehlt?`Kein Prospekt von ${esc(lname(l))}`:PR.refresh||!idx.stand?'Kommt gleich':'Gerade keine Angebote'}</b>${info&&info.fehlt?`${esc(lname(l))} stellt seine Prospekt-Angebote leider nicht online, weder für Freising noch für München. Produkte auf deiner Merkliste werden trotzdem weiter gesucht.`:''}</div>`;
   }
-  if(!PR.laden[l]){prospLaden(l);return chips+banner+`<div class="card empty"><span class="spin"></span><b style="margin-top:8px">Angebote von ${esc(lname(l))} werden geladen…</b></div>`}
+  if(!PR.laden[l]){prospLaden(l);return chips+banner+`<div class="pk-grid" aria-label="Angebote von ${esc(lname(l))} werden geladen">${'<div class="pk sk"><div class="pk-img"></div><div class="pk-b"><i></i><i></i><i class="s"></i></div></div>'.repeat(8)}</div>`}
   const a=prospAuswahl(l);
   const zeitSeg=a.bald.length?`<div class="seg pk-seg"><button data-act="set-pzeit" data-v="jetzt" aria-pressed="${a.zeit==='jetzt'}">Diese Woche · ${a.jetzt.length}</button><button data-act="set-pzeit" data-v="bald" aria-pressed="${a.zeit==='bald'}">Demnächst · ${a.bald.length}</button></div>`:'';
   const katChips=`<div class="chips" role="group" aria-label="Kategorie"><button class="chip" data-act="set-pkat" data-v="alle" aria-pressed="${a.kat==='alle'}">Alles</button>${KAT_GRUPPEN.filter(([id])=>a.kats[id]).map(([id,name])=>`<button class="chip" data-act="set-pkat" data-v="${id}" aria-pressed="${a.kat===id}">${esc(name)}<span class="cnt">${a.kats[id]}</span></button>`).join('')}</div>`;
@@ -1237,7 +1367,7 @@ function vTermine(){
   for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const ds=iso(d),evs=evOn(ds);
     cells+=`<button class="day ${d.getMonth()!==m?'out':''} ${ds===t?'today':''} ${ds===calSel?'sel':''}" data-act="sel-day" data-d="${ds}" aria-label="${d.toLocaleDateString('de-DE',{day:'numeric',month:'long'})}${evs.length?', '+evs.length+' Termine':''}">${d.getDate()}${evs.length?`<span class="dots">${evs.slice(0,3).map(e=>`<i style="background:${ds===calSel?'currentColor':e.color}"></i>`).join('')}</span>`:''}</button>`;
     if(i===34&&new Date(start.getTime()+35*864e5).getMonth()!==m)break;}
-  const evRow=e=>`<div class="ev" data-act="edit-ev" data-id="${e.id}"><i class="stripe" style="background:${e.color}"></i><div class="time">${e.time?esc(e.time):'ganz&shy;tägig'}</div><div style="min-width:0;flex:1"><div class="t">${esc(e.title)}${e.rep?` <span class="rep">↻ ${REP[e.rep]}</span>`:''}</div>${e.ort||e.notiz?`<div class="m">${esc([e.ort,e.notiz].filter(Boolean).join(' · '))}</div>`:''}</div></div>`;
+  const evRow=e=>`<div class="ev" data-act="edit-ev" data-id="${e.id}"><i class="stripe" style="background:${e.color}"></i><div class="time">${e.time?esc(e.time):'ganz&shy;tägig'}</div><div style="min-width:0;flex:1"><div class="t">${e.herz?'<span class="herzchen">♥</span> ':''}${esc(e.title)}${e.rep?` <span class="rep">↻ ${REP[e.rep]}</span>`:''}</div>${e.ort||e.notiz?`<div class="m">${esc([e.ort,e.notiz].filter(Boolean).join(' · '))}</div>`:''}</div></div>`;
   const dayEv=evOn(calSel);
   const upcoming=S.termine.map(e=>({...e,date:nextOcc(e,t)})).filter(e=>e.date).sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||''))).slice(0,8);
   const cal=`<div class="card pad"><div class="cal-head"><button class="icon-btn" data-act="cal-prev" aria-label="Vorheriger Monat">${ic('left')}</button><b>${calMonth.toLocaleDateString('de-DE',{month:'long',year:'numeric'})}</b><button class="icon-btn" data-act="cal-next" aria-label="Nächster Monat">${ic('right')}</button></div>
@@ -1259,6 +1389,7 @@ function evSheet(e){
     <div class="field"><label for="e-date">Datum</label><input id="e-date" type="date" value="${e.date}"></div>
     <div class="field"><label for="e-time">Uhrzeit</label><input id="e-time" type="time" value="${e.time||''}"></div>
     <div class="field full"><label for="e-rep">Wiederholen</label><select id="e-rep"><option value="">Nie</option>${Object.entries(REP).map(([k,l])=>`<option value="${k}" ${e.rep===k?'selected':''}>${l[0].toUpperCase()+l.slice(1)}</option>`).join('')}</select></div>
+    <label class="field full herz-opt"><input type="checkbox" id="e-herz" ${e.herz?'checked':''}><span>${ic('heart')}Besonderer Tag – mit Countdown</span></label>
     <div class="field full"><label for="e-ort">Ort</label><input id="e-ort" value="${esc(e.ort||'')}" placeholder="optional"></div>
     <div class="field full"><label for="e-notiz">Notiz</label><textarea id="e-notiz" placeholder="optional">${esc(e.notiz||'')}</textarea></div>
     <div class="field full"><label>Farbe</label><div class="swatches" id="e-colors">${EV_COLORS.map(c=>`<button type="button" data-act="pick-evcol" data-c="${c}" style="background:${c}" aria-pressed="${e.color===c}" aria-label="Farbe"></button>`).join('')}</div></div>
@@ -1375,7 +1506,7 @@ const endSw=()=>{if(!sw)return;const s=sw;sw=null;if(!s.on)return;s.r.classList.
   else if(s.dx<-90){s.r.style.transform='translateX(-110%)';setTimeout(()=>kind==='item'?deleteItem(id,s.r.closest('.sw')):deleteTodo(id,s.r.closest('.sw')),160)}
   else s.r.style.transform=''};
 document.addEventListener('pointerup',endSw);document.addEventListener('pointercancel',endSw);
-function toggleItem(id,checkEl){const it=S.einkauf.find(x=>x.id===id);if(!it)return;it.done=!it.done;save();
+function toggleItem(id,checkEl){const it=S.einkauf.find(x=>x.id===id);if(!it)return;it.done=!it.done;statBuchen(it);save();
   const row=checkEl&&checkEl.closest('.row');if(checkEl){checkEl.classList.toggle('on',it.done);checkEl.classList.remove('pop');void checkEl.offsetWidth;checkEl.classList.add('pop')}if(row)row.classList.toggle('done',it.done);
   const allDone=it.done&&S.einkauf.length&&S.einkauf.every(x=>x.done);if(allDone){confetti();toast('Alles im Wagen! ✿')}
   collapseThen(row&&row.closest('.sw'),render,380)}
@@ -1433,6 +1564,10 @@ document.addEventListener('click',async e=>{
     case'pick-sugg':{const s=$('#sugg')._list[+b.dataset.i];if(!s)break;
       addItem(s.o?s.o.produkt:s.name,s.laden,s.o?{wahl:wahlVon(s.o)}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
     // Angebote
+    case'rezept':rezeptSheet();setTimeout(()=>{const t=$('#rezeptTxt');if(t)t.focus()},350);break;
+    case'rezept-add':{const z=rezeptZeilen(val('rezeptTxt'));if(!z.length){toast('Keine neuen Zutaten gefunden');break}
+      for(const n of z.reverse())addItem(n,'');closeSheet();render();toast(`${z.length} ${z.length===1?'Zutat':'Zutaten'} auf der Liste ✿`);break}
+    case'liebe-zu':{S.liebeZu=todayIso();save();const c=b.closest('.lv');if(c){c.classList.add('weg');setTimeout(render,320)}else render();break}
     case'set-aview':S.settings.angView=b.dataset.v;save();render();break;
     case'set-plad':S.settings.prospLaden=b.dataset.v;PR.limit=60;PR.q='';save();render();$('#main').scrollTop=0;break;
     case'set-pzeit':S.settings.prospZeit=b.dataset.v;PR.limit=60;save();render();break;
@@ -1446,7 +1581,7 @@ document.addEventListener('click',async e=>{
         toast(`${titel} ist wieder von der Liste`,4000,{label:'Rückgängig',fn:()=>{S.einkauf.splice(i,0,it);save();prospNeu(l)}});break}
       if(m&&m.art==='liste'){const it=m.it,alt={laden:it.laden,wahl:it.wahl,prospekt:it.prospekt};it.laden=l;it.wahl=wahl;it.prospekt=o.i;save();prospNeu(l);
         toast(`${it.name}: Angebot von ${lname(l)} gewählt`,4000,{label:'Rückgängig',fn:()=>{Object.assign(it,alt);if(!alt.prospekt)delete it.prospekt;save();prospNeu(l)}});break}
-      addItem(titel,l,{wahl,prospekt:o.i});prospNeu(l);if(navigator.vibrate)navigator.vibrate(12);
+      addItem(titel,l,{wahl,prospekt:o.i});prospNeu(l);{const nb=document.querySelector(`.pk-add[data-i="${o.i}"]`);if(nb){nb.classList.add('pop')}const tb=document.querySelector('.tab[data-tab=einkauf]');if(tb){tb.classList.remove('hop');void tb.offsetWidth;tb.classList.add('hop')}}if(navigator.vibrate)navigator.vibrate(12);
       toast(`${titel} ist auf der Einkaufsliste`);break}
     case'set-alad':S.settings.angLaden=b.dataset.v;save();render();break;
     case'unwatch':b.disabled=true;await removeWatch(b.dataset.name);break;
@@ -1463,7 +1598,7 @@ document.addEventListener('click',async e=>{
     case'edit-ev':{const ev=S.termine.find(x=>x.id===id);if(ev)evSheet(ev);break}
     case'pick-evcol':sheetData.evColor=b.dataset.c;document.querySelectorAll('#e-colors button').forEach(x=>x.setAttribute('aria-pressed',x===b));break;
     case'save-ev':{const title=val('e-title').trim(),date=val('e-date');if(!title||!date){toast('Titel und Datum bitte');break}
-      const ev={id,title,date,time:val('e-time'),rep:val('e-rep')||'',ort:val('e-ort').trim(),notiz:val('e-notiz').trim(),color:sheetData.evColor||EV_COLORS[0]};
+      const ev={id,title,date,time:val('e-time'),rep:val('e-rep')||'',ort:val('e-ort').trim(),notiz:val('e-notiz').trim(),herz:!!($('#e-herz')&&$('#e-herz').checked),color:sheetData.evColor||EV_COLORS[0]};
       const i=S.termine.findIndex(x=>x.id===id);if(i>=0)S.termine[i]=ev;else S.termine.push(ev);
       calSel=date;calMonth=new Date(date.slice(0,4),+date.slice(5,7)-1,1);save();closeSheet();render();break}
     case'del-ev':{const before=S.termine.slice();S.termine=S.termine.filter(x=>x.id!==id);save();closeSheet();render();undoToast('Termin gelöscht',()=>{S.termine=before;save();render()});break}
@@ -1512,6 +1647,7 @@ document.addEventListener('submit',async e=>{
 });
 document.addEventListener('input',e=>{
   if(e.target.id==='addName'){suggQ=e.target.value;showSugg()}
+  if(e.target.id==='rezeptTxt'){const v=$('#rezeptVor');if(v){const z=rezeptZeilen(e.target.value);v.innerHTML=z.map(n=>`<span class="chip" style="cursor:default">${esc(n)}</span>`).join('')}}
   if(e.target.id==='prospQ'){PR.q=e.target.value;PR.limit=60;clearTimeout(PR.qT);PR.qT=setTimeout(()=>{const el=$('#prospList');if(el)el.innerHTML=prospListe(aktProspLaden())},120)}
   if(e.target.id==='patOp'){S.settings.patOp=+e.target.value;save();applyTheme()}
   if(e.target.id==='accentPick'){S.settings.accent=e.target.value;save();applyTheme()}
