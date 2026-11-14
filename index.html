@@ -368,7 +368,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='2.4';
-const BUILD='2026-11-14-2015'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-14-2115'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -1174,7 +1174,7 @@ function vProspekte(){
   if(!idx)return chips+banner+`<div class="card empty"><span class="spin"></span><b style="margin-top:8px">Prospekte werden geladen…</b></div>`;
   const info=idx.laeden?.[l];
   if(!info||!info.anzahl){
-    return chips+banner+`<div class="card empty"><div class="em">🗞️</div><b>${info&&info.fehlt?`Kein Prospekt von ${esc(lname(l))}`:PR.refresh||!idx.stand?'Kommt gleich':'Gerade keine Angebote'}</b>${info&&info.fehlt?`${esc(lname(l))} veröffentlicht seine Prospekt-Angebote für deine Gegend leider nicht online. Produkte auf deiner Merkliste werden trotzdem weiter gesucht.`:''}</div>`;
+    return chips+banner+`<div class="card empty"><div class="em">🗞️</div><b>${info&&info.fehlt?`Kein Prospekt von ${esc(lname(l))}`:PR.refresh||!idx.stand?'Kommt gleich':'Gerade keine Angebote'}</b>${info&&info.fehlt?`${esc(lname(l))} stellt seine Prospekt-Angebote leider nicht online, weder für Freising noch für München. Produkte auf deiner Merkliste werden trotzdem weiter gesucht.`:''}</div>`;
   }
   if(!PR.laden[l]){prospLaden(l);return chips+banner+`<div class="card empty"><span class="spin"></span><b style="margin-top:8px">Angebote von ${esc(lname(l))} werden geladen…</b></div>`}
   const a=prospAuswahl(l);
@@ -1183,7 +1183,7 @@ function vProspekte(){
   return chips+banner+`<div class="card pk-tools">
       <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. Käse" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
       ${zeitSeg}${katChips}</div>
-    <div id="prospList">${prospListe(l)}</div>
+    ${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
     ${idx.stand?`<p class="note" style="text-align:center">Stand ${fmtDT(idx.stand)} · Quelle: Prospekte für ${esc(idx.plz||'85354')}</p>`:''}`;
 }
 function vAngebote(){
