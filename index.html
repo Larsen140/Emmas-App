@@ -406,7 +406,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='2.6';
-const BUILD='2026-11-14-2330'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-14-2345'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -638,6 +638,18 @@ function ghError(e){
   if(e.status===403||e.status===404)return 'Der Zugangscode darf die Dateien nicht lesen. Beim Token unter „Permissions“ „Contents: Read and write“ hinzufügen (Fehler '+e.status+').';
   return 'Keine Verbindung. Bist du online?'+(e.status?' (Fehler '+e.status+')':'');
 }
+// Jeden Montag ab 6 Uhr neue Preise für die Merkliste: GitHub startet das nicht zuverlässig selbst, also stößt die App es an
+function letzterMontag6(){const d=new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Berlin'}));const tag=(d.getDay()+6)%7;
+  const m=new Date(d);m.setDate(d.getDate()-tag);m.setHours(6,0,0,0);if(m>d)m.setDate(m.getDate()-7);
+  const off=new Date().getTime()-d.getTime();return new Date(m.getTime()+off)}
+async function wochenSuche(){
+  if(wochenSuche.done||!GH.on||searching||!(S.merkliste?.produkte||[]).length)return;
+  const grenze=letzterMontag6(),akt=new Date(S.angebote?.aktualisiert||0),gestartet=new Date(S.merkliste?.suche||0);
+  if(akt>=grenze||(gestartet>=grenze&&Date.now()-gestartet<30*6e4))return;
+  wochenSuche.done=true;
+  const ok=await editMerkliste(d=>{d.suche=new Date().toISOString()},'Wöchentliche Suche (Montag)');
+  if(ok){searching=Date.now();startPolling();if(['angebote','einkauf'].includes(tab))softRender()}
+}
 async function loadRemote(quiet){
   if(!GH.on)return;
   setSync('laden');
@@ -650,6 +662,7 @@ async function loadRemote(quiet){
       if(!kiLaeuft){searching=null;toast('Alle Preise sind da ✿')}
       else if(!firstShown){firstShown=true;toast('Angebote sind da – Normalpreise kommen gleich')}}
     setSync('ok');
+    wochenSuche();
   }catch(e){setSync('fehler');if(!quiet)toast(ghError(e))}
   if(['angebote','einkauf'].includes(tab))render();
 }
