@@ -545,11 +545,11 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.9.1';
-const BUILD='2026-11-15-1810'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.10';
+const BUILD='2026-11-15-1840'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
-const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
+const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d']};
 const THEMES={
   latte:{name:'Latte',bg:'#f6efe4',surface:'#fffaf3',text:'#3b2a1e',accent:'#a8754f',soft:'#ead7bd'},
   rose:{name:'Rosé',bg:'#f8ece9',surface:'#fff8f6',text:'#3d2327',accent:'#c06b7a',soft:'#f2cdd2'},
@@ -570,6 +570,8 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.10',d:'15.11.2026',t:'Orterer ist dabei',items:[
+    ['Neu','Orterer Getränkemarkt ist jetzt ein eigener Laden: auf der Einkaufsliste, im Einkaufsmodus und in der Standort-Erkennung, zum Beispiel in Allershausen.']]},
   {v:'2.9.1',d:'15.11.2026',t:'Fehlerbehebungen',items:[
     ['Behoben','Die Prospekt-Angebote waren durcheinander sortiert. Jetzt nach Kategorie wie im Laden, wahlweise nach Rabatt oder Preis.'],
     ['Behoben','In der Merkliste stehen die passendsten und günstigsten Angebote jetzt oben.']]},
@@ -724,7 +726,7 @@ const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],notizen:[],coupon
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
-S=Object.assign({},DEF,{haeufig:{}},S);if(!Array.isArray(S.notizen))S.notizen=[];if(!Array.isArray(S.coupons))S.coupons=[];if(!S.deviceId)S.deviceId=uid()+uid();S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
+S=Object.assign({},DEF,{haeufig:{}},S);if(!Array.isArray(S.notizen))S.notizen=[];if(!Array.isArray(S.coupons))S.coupons=[];if(!S.deviceId)S.deviceId=uid()+uid();S.settings=Object.assign({},DEF.settings,S.settings||{});if(!S.settings.mitOrterer){S.settings.mitOrterer=true;if(Array.isArray(S.settings.laeden)&&!S.settings.laeden.includes('orterer'))S.settings.laeden.push('orterer')}S.settings.repo=DEFAULT_REPO;
 let saveT;
 function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}if(typeof syncPlan==='function')syncPlan()}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
@@ -1311,7 +1313,7 @@ function sprachTeile(t){
 const SHOP={laden:null,lock:null};
 const GANG_REIHE=['obst','brot','fleisch','milch','vorrat','suess','getraenke','drogerie','nonfood'];
 const GANG_NAME={obst:'Obst & Gemüse',brot:'Brot & Backen',fleisch:'Fleisch & Fisch',milch:'Kühlregal: Milch, Käse & Eier',vorrat:'Vorrat, Konserven & Tiefkühl',suess:'Süßes & Snacks',getraenke:'Getränke',drogerie:'Drogerie',nonfood:'Haushalt & mehr'};
-function gangVon(it){const o={k:it.produkt||it.name};let g=katGruppe(o);
+function gangVon(it){if(it.laden==='orterer'&&!/(pfand|chips|snack|kerze|grill)/i.test(it.name))return 'getraenke';const o={k:it.produkt||it.name};let g=katGruppe(o);
   if(g==='vorrat'){const n=norm(it.produkt||it.name);for(const [id,,re] of KAT_GRUPPEN){if(id!=='vorrat'&&re.test(n)){g=id;break}}}return g}
 function shopItems(l){return S.einkauf.filter(it=>it.laden===l||(!it.laden&&(effPrice(it).bei===l||!effPrice(it).bei)))}
 async function shopStart(l){
@@ -1937,7 +1939,7 @@ function vProspekte(){
   if(!idx)return chips+banner+`<div class="card empty"><span class="spin"></span><b style="margin-top:8px">Prospekte werden geladen…</b></div>`;
   const info=idx.laeden?.[l];
   if(!info||!info.anzahl){
-    return chips+banner+`<div class="card empty"><div class="em">🗞️</div><b>${info&&info.fehlt?`Kein Prospekt von ${esc(lname(l))}`:PR.refresh||!idx.stand?'Kommt gleich':'Gerade keine Angebote'}</b>${info&&info.fehlt?`${esc(lname(l))} stellt seine Prospekt-Angebote leider nicht online, weder für Freising noch für München. Produkte auf deiner Merkliste werden trotzdem weiter gesucht.`:''}</div>`;
+    return chips+banner+`<div class="card empty"><div class="em">🗞️</div><b>${info&&info.fehlt?`Kein Prospekt von ${esc(lname(l))}`:PR.refresh||!idx.stand?'Kommt gleich':'Gerade keine Angebote'}</b>${info&&info.fehlt?`${esc(lname(l))} hat gerade keinen Prospekt online, weder für Freising noch für die Umgebung. Sobald einer erscheint, holt die App ihn automatisch. Produkte auf deiner Merkliste werden trotzdem weiter gesucht.`:''}</div>`;
   }
   if(!PR.laden[l]){prospLaden(l);return chips+banner+`<div class="pk-grid" aria-label="Angebote von ${esc(lname(l))} werden geladen">${'<div class="pk sk"><div class="pk-img"></div><div class="pk-b"><i></i><i></i><i class="s"></i></div></div>'.repeat(8)}</div>`}
   const a=prospAuswahl(l);
