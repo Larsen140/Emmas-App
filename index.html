@@ -529,6 +529,7 @@ nav.tabs{isolation:isolate}
 .payback .ln{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);margin-top:8px}
 .pb-btn{background:#0046aa!important;color:#fff!important;text-decoration:none}
 .pb-tag{margin-left:6px;font-size:10px;font-weight:900;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:#0046aa;color:#fff;text-transform:none}
+.pk-sort{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pk-sort span{font-size:12px;font-weight:800;color:var(--muted);margin-right:2px}
 </style>
 </head>
 <body>
@@ -544,8 +545,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.9';
-const BUILD='2026-11-15-1745'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.9.1';
+const BUILD='2026-11-15-1810'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -569,6 +570,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.9.1',d:'15.11.2026',t:'Fehlerbehebungen',items:[
+    ['Behoben','Die Prospekt-Angebote waren durcheinander sortiert. Jetzt nach Kategorie wie im Laden, wahlweise nach Rabatt oder Preis.'],
+    ['Behoben','In der Merkliste stehen die passendsten und günstigsten Angebote jetzt oben.']]},
   {v:'2.9',d:'15.11.2026',t:'Payback-Erinnerung',items:[
     ['Neu','Bei dm und Edeka erinnert dich der Einkaufsmodus an deine Payback-Karte und zeigt deine Payback-Coupons.'],
     ['Neu','Einmal pro Woche kommt eine Mitteilung: Payback-Coupons aktivieren. Den Tag wählst du in den Optionen.'],
@@ -1869,8 +1873,11 @@ async function prospLaden(l){
   if(tab==='angebote'||tab==='einkauf')softRender();
 }
 function prospAuswahl(l){
-  const all=PR.laden[l]||[],t=todayIso(),zeit=S.settings.prospZeit||'jetzt',kat=S.settings.prospKat||'alle';
+  const all=PR.laden[l]||[],t=todayIso(),kat=S.settings.prospKat||'alle';
   const jetzt=all.filter(o=>!o.v||o.v<=t),bald=all.filter(o=>o.v&&o.v>t);
+  const morgen=iso(new Date(Date.now()+864e5));
+  // Ohne eigene Wahl von heute: kurz vor der neuen Woche (z. B. sonntags) gleich die neuen Angebote zeigen
+  const zeit=S.settings.prospZeitTag===t?(S.settings.prospZeit||'jetzt'):(bald.length&&bald.some(o=>o.v<=morgen)&&bald.length>jetzt.length?'bald':'jetzt');
   const basis=(zeit==='bald'||!jetzt.length)&&bald.length?bald:jetzt;
   const q=wortListe(PR.q);
   const gesucht=q.length?basis.filter(o=>{const tx=norm([o.m,o.n,o.d,o.k].join(' '));return q.every(w=>tx.includes(w))}):basis;
@@ -1893,13 +1900,28 @@ function prospKarte(o,mk,l){
     ${wann||o.s?`<div class="pk-v">${esc([wann,o.s].filter(Boolean).join(' · '))}</div>`:''}
   </div>`;
 }
+const SORT_ARTEN=[['kat','Kategorie'],['rabatt','Rabatt'],['preis','Preis']];
+function rabattVon(o){if(o.p&&o.a&&o.a>o.p)return (o.a-o.p)/o.a;const m=/(\d+)\s*%/.exec(o.r||'');return m?+m[1]/100:0}
+function prospSort(arr){
+  let art=S.settings.prospSort||'kat';if(art==='rabatt'&&!arr.some(o=>rabattVon(o)>0))art='kat';const gi=o=>{const i=GANG_REIHE.indexOf(katGruppe(o));return i<0?99:i};
+  const preis=o=>o.p||Infinity,name=o=>prospTitel(o).toLowerCase();
+  const f=art==='preis'?(x,y)=>preis(x)-preis(y)||name(x).localeCompare(name(y),'de')
+    :art==='rabatt'?(x,y)=>rabattVon(y)-rabattVon(x)||preis(x)-preis(y)
+    :(x,y)=>gi(x)-gi(y)||rabattVon(y)-rabattVon(x)||name(x).localeCompare(name(y),'de');
+  return arr.slice().sort(f);
+}
+function prospGrid(liste,mk,l,mitKopf){
+  if(!mitKopf)return `<div class="pk-grid">${liste.map(o=>prospKarte(o,mk,l)).join('')}</div>`;
+  let out='',g=null,buf=[];const flush=()=>{if(buf.length)out+=`<div class="group-h pk-h">${esc(GANG_NAME[g]||'Sonstiges')}</div><div class="pk-grid">${buf.map(o=>prospKarte(o,mk,l)).join('')}</div>`;buf=[]};
+  for(const o of liste){const k=katGruppe(o);if(k!==g){flush();g=k}buf.push(o)}flush();return out;
+}
 function prospListe(l){
   const a=prospAuswahl(l),mk=prospMarken();
-  const meine=[],rest=[];for(const o of a.liste)(mk(o)?meine:rest).push(o);
-  const zeig=rest.slice(0,PR.limit);
+  const meine=[],rest=[];for(const o of prospSort(a.liste))(mk(o)?meine:rest).push(o);
+  const zeig=rest.slice(0,PR.limit),kopf=((S.settings.prospSort||'kat')==='kat'||(S.settings.prospSort==='rabatt'&&!a.liste.some(o=>rabattVon(o)>0)))&&a.kat==='alle';
   return `${meine.length?`<div class="group-h pk-h">${ic('tick')}Passt zu deiner Liste <span class="tag deal">${meine.length}</span></div><div class="pk-grid">${meine.map(o=>prospKarte(o,mk,l)).join('')}</div>`:''}
-    ${meine.length&&rest.length?`<div class="group-h pk-h">Alle weiteren Angebote</div>`:''}
-    ${a.liste.length?`<div class="pk-grid">${zeig.map(o=>prospKarte(o,mk,l)).join('')}</div>${rest.length>zeig.length?`<button class="btn ghost pk-more" data-act="prosp-more">Weitere ${rest.length-zeig.length} Angebote zeigen</button>`:''}`
+    ${meine.length&&rest.length&&!kopf?`<div class="group-h pk-h">Alle weiteren Angebote</div>`:''}
+    ${a.liste.length?`${prospGrid(zeig,mk,l,kopf)}${rest.length>zeig.length?`<button class="btn ghost pk-more" data-act="prosp-more">Weitere ${rest.length-zeig.length} Angebote zeigen</button>`:''}`
       :`<div class="card empty" style="padding:22px"><b style="font-size:16px">Nichts gefunden</b>${PR.q?'Versuch ein anderes Wort.':''}</div>`}`;
 }
 function aktProspLaden(){const ls=S.settings.laeden;let l=S.settings.prospLaden;if(!ls.includes(l))l=ls.find(k=>!(PR.index?.laeden?.[k]?.fehlt))||ls[0];return l}
@@ -1923,7 +1945,7 @@ function vProspekte(){
   const katChips=`<div class="chips" role="group" aria-label="Kategorie"><button class="chip" data-act="set-pkat" data-v="alle" aria-pressed="${a.kat==='alle'}">Alles</button>${KAT_GRUPPEN.filter(([id])=>a.kats[id]).map(([id,name])=>`<button class="chip" data-act="set-pkat" data-v="${id}" aria-pressed="${a.kat===id}">${esc(name)}<span class="cnt">${a.kats[id]}</span></button>`).join('')}</div>`;
   return chips+banner+`<div class="card pk-tools">
       <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. Käse" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
-      ${zeitSeg}${katChips}</div>
+      ${zeitSeg}${katChips}<div class="pk-sort" role="group" aria-label="Sortieren"><span>Sortieren:</span>${SORT_ARTEN.filter(([k])=>k!=='rabatt'||(PR.laden[l]||[]).some(o=>rabattVon(o)>0)).map(([k,n])=>`<button class="chip" data-act="set-psort" data-v="${k}" aria-pressed="${(S.settings.prospSort||'kat')===k}">${n}</button>`).join('')}</div></div>
     ${info.quelle?`<p class="note" style="margin:0 4px">${info.quelle==='auszug'?`${esc(lname(l))} zeigt online nur einen Auszug aus dem Prospekt, meist Rabatt-Aktionen.`:`Angebote vom Markt ${esc(info.quelle)}, dem nächsten bei Freising.`}</p>`:''}${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
     ${idx.stand?`<p class="note" style="text-align:center">Stand ${fmtDT(idx.stand)} · Quelle: Prospekte für ${esc(idx.plz||'85354')}</p>`:''}`;
 }
@@ -1953,13 +1975,13 @@ function vMerk(seg){
   else{
     const t=todayIso();
     body=a.produkte.map(p=>{
-      const offs=(p.angebote||[]).filter(o=>!o.unpassend&&(!o.bis||o.bis>=t)&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden));
+      const offs=(p.angebote||[]).filter(o=>!o.unpassend&&(!o.bis||o.bis>=t)&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden)).sort((x,y)=>(x.exakt?-1:0)-(y.exakt?-1:0)||(x.rang??1)-(y.rang??1)||x.preis-y.preis);
       return `<div class="card list"><div class="prod-h"><h3>${esc(p.name)}</h3>${offs.length?`<span class="tag deal">${offs.length} ${offs.length===1?'Angebot':'Angebote'}</span>`:''}</div>
       ${offs.length?offs.map(o=>{const off=o.alterPreis?Math.round((1-o.preis/o.alterPreis)*100):0;return `<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.marke&&!norm(o.titel).includes(norm(o.marke))?' · '+esc(o.marke):''}${o.bis?' · bis '+fmtDate(o.bis,{weekday:'short',day:'numeric',month:'short'}):''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div>${off>0?`<span class="tag deal" style="margin-top:4px;display:inline-block">−${off} %</span>`:''}</div>
         <div class="pr"><b>${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="a" data-i="${p.angebote.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`}).join('')
       :`<div class="offer"><div class="body"><div class="m">Diese Woche kein Angebot${sel!=='alle'?' bei '+esc(lname(sel)):''}.</div></div></div>`}
-      ${(()=>{const np=(p.normalpreise||[]).filter(o=>!o.unpassend&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden));return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.ki?` · <a href="${esc(o.quelle)}" target="_blank" rel="noopener" style="color:inherit">KI-Preis${o.info?' · '+esc(o.info):''} ↗</a>`:''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
+      ${(()=>{const np=(p.normalpreise||[]).filter(o=>!o.unpassend&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden)).sort((x,y)=>(x.exakt?-1:0)-(y.exakt?-1:0)||(x.rang??1)-(y.rang??1)||x.preis-y.preis);return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.ki?` · <a href="${esc(o.quelle)}" target="_blank" rel="noopener" style="color:inherit">KI-Preis${o.info?' · '+esc(o.info):''} ↗</a>`:''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
         <div class="pr"><b style="color:var(--text)">${eur(o.preis)}</b></div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="n" data-i="${p.normalpreise.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`).join('')}`:''})()}</div>`}).join('');
   }
@@ -2228,7 +2250,8 @@ document.addEventListener('click',async e=>{
     case'liebe-zu':{S.liebeZu=todayIso();save();const c=b.closest('.lv');if(c){c.classList.add('weg');setTimeout(render,320)}else render();break}
     case'set-aview':S.settings.angView=b.dataset.v;save();render();break;
     case'set-plad':S.settings.prospLaden=b.dataset.v;PR.limit=60;PR.q='';save();render();$('#main').scrollTop=0;break;
-    case'set-pzeit':S.settings.prospZeit=b.dataset.v;PR.limit=60;save();render();break;
+    case'set-pzeit':S.settings.prospZeit=b.dataset.v;S.settings.prospZeitTag=todayIso();PR.limit=60;save();render();break;
+    case'set-psort':S.settings.prospSort=b.dataset.v;PR.limit=60;save();render();break;
     case'set-pkat':S.settings.prospKat=b.dataset.v;PR.limit=60;save();render();break;
     case'prosp-more':PR.limit+=90;{const el=$('#prospList');if(el)el.innerHTML=prospListe(aktProspLaden())}break;
     case'prosp-retry':PR.fehler=null;PR.index=null;PR.laden={};prospIndex();render();break;
