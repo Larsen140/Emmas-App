@@ -531,6 +531,14 @@ nav.tabs{isolation:isolate}
 .pb-tag{margin-left:6px;font-size:10px;font-weight:900;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:#0046aa;color:#fff;text-transform:none}
 .pk-sort{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pk-sort span{font-size:12px;font-weight:800;color:var(--muted);margin-right:2px}
 .pk-pdf{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pk-pdf>span{font-size:28px}.pk-pdf .grow{flex:1;min-width:150px}.pk-pdf small{display:block;font-size:12px}
+
+.pk-app{display:flex;align-items:center;gap:5px;padding:6px 10px;font-size:12.5px;font-weight:800;line-height:1.25;background:#ffe27a;color:#4a3500}
+.pk-app.muss{background:#ff9f43;color:#3a1c00}
+.pk-app.online{background:#cfd8e6;color:#22324a}
+[data-dark] .pk-app{background:#d9b23a;color:#241900}[data-dark] .pk-app.muss{background:#e2832a;color:#1c0d00}[data-dark] .pk-app.online{background:#7f8ea8;color:#0e1726}
+.app-tag{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:#ffe27a;color:#4a3500;margin:2px 4px 0 0}
+.app-tag.muss{background:#ff9f43;color:#3a1c00}.app-tag.online{background:#cfd8e6;color:#22324a}
+.pk-ohneapp{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:700;cursor:pointer}.pk-ohneapp input{width:18px;height:18px;margin-top:1px;flex:none;accent-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -546,8 +554,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.10';
-const BUILD='2026-11-15-1945'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.10.1';
+const BUILD='2026-11-15-2030'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d']};
@@ -571,6 +579,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.10.1',d:'15.11.2026',t:'App-Hinweise bei Angeboten',items:[
+    ['Besser','Angebote, die nur mit einer App gelten (Lidl Plus, EDEKA-App, REWE Bonus, HIT-App, Rossmann-App), sind jetzt deutlich markiert, mit App-Preis.'],
+    ['Besser','Angebote, die es nur online gibt, sind ebenfalls markiert. Beides lässt sich mit einem Haken ausblenden.']]},
   {v:'2.10',d:'15.11.2026',t:'Orterer ist dabei',items:[
     ['Neu','Orterer Getränkemarkt ist jetzt ein eigener Laden: auf der Einkaufsliste, im Einkaufsmodus und in der Standort-Erkennung, zum Beispiel in Allershausen.'],
     ['Neu','Die Angebote aus dem Orterer-Prospekt stehen unter Angebote, dazu der ganze Prospekt zum Durchblättern.']]},
@@ -1332,7 +1343,7 @@ function vShop(){
   const sum=arr=>arr.reduce((s_,it)=>s_+(effPrice({...it,laden:it.laden||l}).preis||0)*qty(it),0);
   const row=it=>{const p=effPrice({...it,laden:it.laden||l}),q=qty(it);return `<div class="shop-row ${it.done?'done':''}">
     <button class="check big ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
-    <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>${p.titel&&norm(p.titel)!==norm(it.name)?`<div class="m">${esc(p.titel)}</div>`:''}${it.notiz?`<div class="m">${esc(it.notiz)}</div>`:''}</div>
+    <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>${p.titel&&norm(p.titel)!==norm(it.name)?`<div class="m">${esc(p.titel)}</div>`:''}${it.notiz?`<div class="m">${esc(it.notiz)}</div>`:''}${it.wahl&&appText(it.wahl)&&!(it.notiz||'').includes(appText(it.wahl))?`<div class="m">${appTag(it.wahl)}</div>`:''}</div>
     <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal?'<span class="tag deal">Angebot</span>':''}`:''}</div></div>`};
   const pct=items.length?Math.round(fertig.length/items.length*100):0;
   return `<div class="shop-head" style="--lc:${lcol(l)}"><button class="icon-btn" data-act="shop-ende" aria-label="Einkaufsmodus beenden">${ic('left')}</button>
@@ -1569,6 +1580,20 @@ function paybackOptionen(){
     <p class="note">So erinnert dich die App:<br>• Mitteilung einmal pro Woche: Coupons in der Payback-App aktivieren<br>• Mitteilung, wenn ein eingetragener Payback-Coupon morgen abläuft<br>• Im Einkaufsmodus bei dm und Edeka: „Payback nicht vergessen!“ mit deinen Coupons${S.push&&S.push.on?'':'<br><b>Für die Mitteilungen müssen die Benachrichtigungen oben eingeschaltet sein.</b>'}</p>`:''}</div>`;
 }
 
+/* ===== App-Pflicht bei Angeboten ===== */
+function appText(o){const a=o&&o.app;if(!a&&!(o&&o.online))return '';if(!a)return 'Nur online erhältlich';
+  if(a.nurApp)return `Preis nur mit ${a.n}${a.normal?` · ohne App ${eur(a.normal)}`:''}`;
+  if(a.p!=null&&!a.coupon)return `Mit ${a.n}: ${eur(a.p)}`;
+  if(a.p!=null&&a.coupon)return `Mit ${a.n}-Coupon: ${eur(a.p)}`;
+  if(a.bonus)return `Mit ${a.n}: ${eur(a.bonus)} Bonus`;
+  if(a.bonusPct)return `Mit ${a.n}: ${a.bonusPct} % Bonus`;
+  if(a.guenstiger)return `Mit ${a.n} noch günstiger`;
+  if(a.coupon)return `Nur mit Coupon in der ${a.n}`;
+  return `Nur mit ${a.n}`}
+function appTag(o){const t=appText(o);if(!t)return '';const online=!o.app;
+  return `<span class="app-tag${online?' online':o.app.nurApp||o.app.coupon?' muss':''}">${online?'🌐':'📱'} ${esc(t)}</span>`}
+function appPflicht(o){return !!(o&&(o.online||(o.app&&(o.app.nurApp||(o.app.coupon&&o.app.p==null)))))}
+
 /* ===== Coupons ===== */
 const COUPON_APPS=['Lidl Plus','Payback','dm-App','Rossmann-App','Kaufland Card','REWE-App','Edeka-App','Andere'];
 function couponOk(c){return !c.eingeloest&&(!c.bis||c.bis>=todayIso())}
@@ -1691,7 +1716,7 @@ async function teilen(text,titel,dateien){
 function angebotText(o,l){
   const alt=o.a&&o.p&&o.a>o.p?` statt ${eur(o.a)}`:'';
   const wann=o.v&&o.v>todayIso()?`ab ${fmtDate(o.v,{weekday:'short',day:'numeric',month:'numeric'})}`:o.b?`bis ${fmtDate(o.b,{weekday:'short',day:'numeric',month:'numeric'})}`:'';
-  return `🏷️ Angebot bei ${lname(l)}\n${prospTitel(o)}${o.d&&o.d!=='Details im Prospekt'?` (${o.d})`:''}\n${o.p?`💶 ${eur(o.p)}${alt}`:`💶 ${o.r||''}`}${o.g&&o.e&&o.p&&Math.abs(o.g-o.p)>.005?` · ${eur(o.g)}/${o.e}`:''}${wann?`\n📅 ${wann}`:''}`;
+  return `🏷️ Angebot bei ${lname(l)}${appText(o)?`\n📱 ${appText(o)}`:''}\n${prospTitel(o)}${o.d&&o.d!=='Details im Prospekt'?` (${o.d})`:''}\n${o.p?`💶 ${eur(o.p)}${alt}`:`💶 ${o.r||''}`}${o.g&&o.e&&o.p&&Math.abs(o.g-o.p)>.005?` · ${eur(o.g)}/${o.e}`:''}${wann?`\n📅 ${wann}`:''}`;
 }
 
 function vEinkauf(){
@@ -1707,7 +1732,7 @@ function vEinkauf(){
   const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="sw"><div class="sw-bg" aria-hidden="true"><span class="l">✓ ${it.done?'Zurück':'Im Wagen'}</span><span class="r">Löschen</span></div><div class="row ${it.done?'done':''}" data-swipe="item" data-id="${it.id}">
     <button class="check ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
     <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
-      <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.bei?`<span class="tag acc">am günstigsten bei ${esc(lname(p.bei))}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${p.ki===true?'<span class="tag acc">KI-Preis</span>':''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
+      <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${it.wahl&&!(it.notiz||'').includes(appText(it.wahl)||'§')?appTag(it.wahl):''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.bei?`<span class="tag acc">am günstigsten bei ${esc(lname(p.bei))}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${p.ki===true?'<span class="tag acc">KI-Preis</span>':''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
     <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:(pending(it)&&!it.done?`<span class="muted small" style="display:inline-flex;gap:6px;align-items:center"><span class="spin"></span>sucht…</span>`:`<span class="muted small">kein Preis</span>`)}</div></div></div>`};
   const sum=arr=>arr.reduce((s,it)=>{const p=effPrice(it);return s+(p.preis||0)*qty(it)},0);
   let listHtml='';
@@ -1771,7 +1796,7 @@ function showSugg(){
   box.innerHTML=list.map((s,i)=>`<button type="button" data-act="pick-sugg" data-i="${i}"><i class="dot" style="background:${s.laden?lcol(s.laden):'var(--muted)'}"></i><span class="nm">${esc(s.name)}<br><small>${esc(s.laden?lname(s.laden):'Ohne Laden')}${s.offer?` · Angebot${s.bis?' bis '+fmtDate(s.bis):''}`:s.normal?' · Normalpreis':' · früher gekauft'}</small></span>${s.preis!=null?`<span class="pr" style="${s.offer?'':'color:var(--text)'}">${eur(s.preis)}</span>`:''}</button>`).join('');
   box._list=list;
 }
-function wahlVon(o){return {laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki,info:o.info||'',grundpreis:o.grundpreis||null,einheit:o.einheit||''}}
+function wahlVon(o){return {app:o.app||null,online:!!o.online,laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki,info:o.info||'',grundpreis:o.grundpreis||null,einheit:o.einheit||''}}
 function addItem(name,laden,extra={}){
   name=name.trim();if(!name)return;
   const it={id:uid(),name,produkt:(extra.produkt||name),menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
@@ -1884,7 +1909,8 @@ function prospAuswahl(l){
   const zeit=S.settings.prospZeitTag===t?(S.settings.prospZeit||'jetzt'):(bald.length&&bald.some(o=>o.v<=morgen)&&bald.length>jetzt.length?'bald':'jetzt');
   const basis=(zeit==='bald'||!jetzt.length)&&bald.length?bald:jetzt;
   const q=wortListe(PR.q);
-  const gesucht=q.length?basis.filter(o=>{const tx=norm([o.m,o.n,o.d,o.k].join(' '));return q.every(w=>tx.includes(w))}):basis;
+  const basis2=S.settings.ohneApp?basis.filter(o=>!appPflicht(o)):basis;
+  const gesucht=q.length?basis2.filter(o=>{const tx=norm([o.m,o.n,o.d,o.k].join(' '));return q.every(w=>tx.includes(w))}):basis2;
   const kats={};for(const o of gesucht){const g=katGruppe(o);kats[g]=(kats[g]||0)+1}
   const liste=kat==='alle'||!kats[kat]?gesucht:gesucht.filter(o=>katGruppe(o)===kat);
   return {jetzt,bald,zeit:basis===bald?'bald':'jetzt',kats,liste,kat:kat==='alle'||!kats[kat]?'alle':kat};
@@ -1899,6 +1925,7 @@ function prospKarte(o,mk,l){
   return `<div class="pk${m?' mine '+m.art:''}">
     <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">${katGruppe(o)==='getraenke'?'🍾':'🏷️'}</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}<button class="pk-share" data-act="share-offer" data-l="${l}" data-i="${o.i}" aria-label="Angebot teilen">${ic('share')}</button></div>
     ${markHtml}
+    ${appText(o)?`<div class="pk-app${!o.app?' online':appPflicht(o)?' muss':''}">${o.app?'📱':'🌐'} ${esc(appText(o))}</div>`:''}
     <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
     <div class="pk-f"><div class="pk-p">${o.p?`<b>${eur(o.p)}</b>`:`<b class="pk-r">${esc(o.r||'Angebot')}</b>`}${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.p&&o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
     ${wann||o.s?`<div class="pk-v">${esc([wann,o.s].filter(Boolean).join(' · '))}</div>`:''}
@@ -1949,7 +1976,7 @@ function vProspekte(){
   const katChips=`<div class="chips" role="group" aria-label="Kategorie"><button class="chip" data-act="set-pkat" data-v="alle" aria-pressed="${a.kat==='alle'}">Alles</button>${KAT_GRUPPEN.filter(([id])=>a.kats[id]).map(([id,name])=>`<button class="chip" data-act="set-pkat" data-v="${id}" aria-pressed="${a.kat===id}">${esc(name)}<span class="cnt">${a.kats[id]}</span></button>`).join('')}</div>`;
   return chips+banner+`<div class="card pk-tools">
       <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. ${l==='orterer'?'Bier':l==='dm'||l==='rossmann'?'Shampoo':'Käse'}" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
-      ${zeitSeg}${katChips}<div class="pk-sort" role="group" aria-label="Sortieren"><span>Sortieren:</span>${SORT_ARTEN.filter(([k])=>k!=='rabatt'||(PR.laden[l]||[]).some(o=>rabattVon(o)>0)).map(([k,n])=>`<button class="chip" data-act="set-psort" data-v="${k}" aria-pressed="${(S.settings.prospSort||'kat')===k}">${n}</button>`).join('')}</div></div>
+      ${zeitSeg}${katChips}${(PR.laden[l]||[]).some(appPflicht)?`<label class="pk-ohneapp"><input type="checkbox" data-act="toggle-ohneapp" ${S.settings.ohneApp?'checked':''}><span>📱 Angebote ausblenden, die nur mit App oder online gelten (${(PR.laden[l]||[]).filter(appPflicht).length})</span></label>`:''}<div class="pk-sort" role="group" aria-label="Sortieren"><span>Sortieren:</span>${SORT_ARTEN.filter(([k])=>k!=='rabatt'||(PR.laden[l]||[]).some(o=>rabattVon(o)>0)).map(([k,n])=>`<button class="chip" data-act="set-psort" data-v="${k}" aria-pressed="${(S.settings.prospSort||'kat')===k}">${n}</button>`).join('')}</div></div>
     ${info.pdfs&&info.pdfs.length?`<div class="card pad pk-pdf"><span>🍺</span><div class="grow"><b>Orterer-Prospekt</b><small class="muted">${info.pdfs.map(x=>`${fmtDate(x.von,{day:'numeric',month:'numeric'})} – ${fmtDate(x.bis,{day:'numeric',month:'numeric'})}`).join(' · ')} · gilt in allen Orterer-Märkten, z. B. Allershausen</small></div>${info.pdfs.map((x,i)=>`<a class="btn ghost sm" href="${esc(x.url)}" target="_blank" rel="noopener">${info.pdfs.length>1?'Prospekt '+(i+1):'Ganzer Prospekt'}</a>`).join('')}</div>`:''}${info.quelle&&!info.pdfs?`<p class="note" style="margin:0 4px">${info.quelle==='auszug'?`${esc(lname(l))} zeigt online nur einen Auszug aus dem Prospekt, meist Rabatt-Aktionen.`:`Angebote vom Markt ${esc(info.quelle)}, dem nächsten bei Freising.`}</p>`:''}${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
     ${idx.stand?`<p class="note" style="text-align:center">Stand ${fmtDT(idx.stand)} · Quelle: Prospekte für ${esc(idx.plz||'85354')}</p>`:''}`;
 }
@@ -1981,7 +2008,7 @@ function vMerk(seg){
     body=a.produkte.map(p=>{
       const offs=(p.angebote||[]).filter(o=>!o.unpassend&&(!o.bis||o.bis>=t)&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden)).sort((x,y)=>(x.exakt?-1:0)-(y.exakt?-1:0)||(x.rang??1)-(y.rang??1)||x.preis-y.preis);
       return `<div class="card list"><div class="prod-h"><h3>${esc(p.name)}</h3>${offs.length?`<span class="tag deal">${offs.length} ${offs.length===1?'Angebot':'Angebote'}</span>`:''}</div>
-      ${offs.length?offs.map(o=>{const off=o.alterPreis?Math.round((1-o.preis/o.alterPreis)*100):0;return `<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.marke&&!norm(o.titel).includes(norm(o.marke))?' · '+esc(o.marke):''}${o.bis?' · bis '+fmtDate(o.bis,{weekday:'short',day:'numeric',month:'short'}):''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div>${off>0?`<span class="tag deal" style="margin-top:4px;display:inline-block">−${off} %</span>`:''}</div>
+      ${offs.length?offs.map(o=>{const off=o.alterPreis?Math.round((1-o.preis/o.alterPreis)*100):0;return `<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div>${appTag(o)}<div class="m">${esc(lname(o.laden))}${o.marke&&!norm(o.titel).includes(norm(o.marke))?' · '+esc(o.marke):''}${o.bis?' · bis '+fmtDate(o.bis,{weekday:'short',day:'numeric',month:'short'}):''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div>${off>0?`<span class="tag deal" style="margin-top:4px;display:inline-block">−${off} %</span>`:''}</div>
         <div class="pr"><b>${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="a" data-i="${p.angebote.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`}).join('')
       :`<div class="offer"><div class="body"><div class="m">Diese Woche kein Angebot${sel!=='alle'?' bei '+esc(lname(sel)):''}.</div></div></div>`}
@@ -2214,6 +2241,7 @@ document.addEventListener('click',async e=>{
     case'rezept':rezeptSheet();setTimeout(()=>{const t=$('#rezeptTxt');if(t)t.focus()},350);break;
     case'toggle-payback':S.settings.payback=!!b.checked;save();render();if(S.push&&S.push.on){S.push.prefs=S.push.prefs||{};S.push.prefs.payback=S.settings.payback;save();pushUpdate(a=>{a.prefs=S.push.prefs},'Payback-Erinnerung')}break;
     case'coupon-neu-pb':couponSheet(null);setTimeout(()=>{const a=$('#c-app');if(a)a.value='Payback';const l=$('#c-laden');if(l&&SHOP.laden&&PAYBACK_LAEDEN.includes(SHOP.laden))l.value=SHOP.laden},50);break;
+    case'toggle-ohneapp':S.settings.ohneApp=!!b.checked;PR.limit=60;save();render();break;
     case'toggle-deko':S.settings.deko=!!b.checked;save();dekoAnwenden();render();break;
     case'share-offer':{const o=(PR.laden[b.dataset.l]||[]).find(x=>String(x.i)===b.dataset.i);if(o)teilen(angebotText(o,b.dataset.l),'Angebot');break}
     case'share-coupon':{const c=S.coupons.find(x=>x.id===b.dataset.id);if(c)teilen(`🎟️ Coupon${c.laden?' für '+lname(c.laden):''}: ${c.text}${c.code?`\nCode: ${c.code}`:''}${c.bis?`\nGültig bis ${fmtDate(c.bis)}`:''}${c.app?`\n(${c.app})`:''}`,'Coupon');break}
@@ -2261,12 +2289,12 @@ document.addEventListener('click',async e=>{
     case'prosp-retry':PR.fehler=null;PR.index=null;PR.laden={};prospIndex();render();break;
     case'prosp-add':{const l=b.dataset.l,o=(PR.laden[l]||[]).find(x=>String(x.i)===b.dataset.i);if(!o)break;
       const m=prospMarken()(o),titel=prospTitel(o);
-      const wahl=!o.p?null:{laden:l,titel,preis:o.p,alterPreis:o.a&&o.a>o.p?o.a:null,bis:o.b||null,normal:false,ki:false,info:o.d&&o.d!=='Details im Prospekt'?o.d:'',grundpreis:o.g||null,einheit:o.e||''};
+      const wahl=!o.p?null:{app:o.app||null,online:!!o.online,laden:l,titel,preis:o.p,alterPreis:o.a&&o.a>o.p?o.a:null,bis:o.b||null,normal:false,ki:false,info:o.d&&o.d!=='Details im Prospekt'?o.d:'',grundpreis:o.g||null,einheit:o.e||''};
       if(m&&m.direkt){const it=m.it,i=S.einkauf.indexOf(it);S.einkauf.splice(i,1);save();prospNeu(l);
         toast(`${titel} ist wieder von der Liste`,4000,{label:'Rückgängig',fn:()=>{S.einkauf.splice(i,0,it);save();prospNeu(l)}});break}
       if(m&&m.art==='liste'){const it=m.it,alt={laden:it.laden,wahl:it.wahl,prospekt:it.prospekt};it.laden=l;it.wahl=wahl;it.prospekt=o.i;save();prospNeu(l);
         toast(`${it.name}: Angebot von ${lname(l)} gewählt`,4000,{label:'Rückgängig',fn:()=>{Object.assign(it,alt);if(!alt.prospekt)delete it.prospekt;save();prospNeu(l)}});break}
-      addItem(titel,l,{wahl,prospekt:o.i,...(o.r?{notiz:o.r}:{})});prospNeu(l);{const nb=document.querySelector(`.pk-add[data-i="${o.i}"]`);if(nb){nb.classList.add('pop')}const tb=document.querySelector('.tab[data-tab=einkauf]');if(tb){tb.classList.remove('hop');void tb.offsetWidth;tb.classList.add('hop')}}if(navigator.vibrate)navigator.vibrate(12);
+      addItem(titel,l,{wahl,prospekt:o.i,...(o.r||appText(o)?{notiz:[o.r,appText(o)].filter(Boolean).join(' · ')}:{})});prospNeu(l);{const nb=document.querySelector(`.pk-add[data-i="${o.i}"]`);if(nb){nb.classList.add('pop')}const tb=document.querySelector('.tab[data-tab=einkauf]');if(tb){tb.classList.remove('hop');void tb.offsetWidth;tb.classList.add('hop')}}if(navigator.vibrate)navigator.vibrate(12);
       toast(`${titel} ist auf der Einkaufsliste`);break}
     case'set-alad':S.settings.angLaden=b.dataset.v;save();render();break;
     case'unwatch':b.disabled=true;await removeWatch(b.dataset.name);break;
