@@ -520,6 +520,15 @@ nav.tabs{isolation:isolate}
 @media (prefers-reduced-motion:reduce){#deko{display:none}.saison-e{animation:none}}
 @media(max-width:440px){.tab{font-size:9.6px;letter-spacing:-.02em;padding-left:0;padding-right:0}.tab svg{width:21px;height:21px}}
 .notiz-top{display:flex;flex-wrap:nowrap}.notiz-top .pk-search{flex:1;min-width:0}
+
+.payback{padding:14px;border:2px solid #0046aa;background:linear-gradient(135deg,color-mix(in srgb,#0046aa 14%,var(--card)),var(--card));animation:pkIn .4s ease both}
+.pb-k{display:flex;align-items:center;gap:12px}
+.pb-k b{display:block;font-size:17px}.pb-k small{color:var(--muted);font-weight:700;font-size:12.5px}
+.pb-logo{flex:none;width:40px;height:40px;border-radius:12px;background:#0046aa;color:#fff;display:grid;place-items:center;font-weight:900;font-size:22px;font-family:Arial,sans-serif;box-shadow:0 6px 14px -6px #0046aa}
+.pb-logo.sm{display:inline-grid;width:24px;height:24px;font-size:14px;border-radius:7px;vertical-align:-5px;margin-right:4px;box-shadow:none}
+.payback .ln{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);margin-top:8px}
+.pb-btn{background:#0046aa!important;color:#fff!important;text-decoration:none}
+.pb-tag{margin-left:6px;font-size:10px;font-weight:900;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:#0046aa;color:#fff;text-transform:none}
 </style>
 </head>
 <body>
@@ -535,8 +544,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.8';
-const BUILD='2026-11-15-1730'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.9';
+const BUILD='2026-11-15-1745'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -560,6 +569,10 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.9',d:'15.11.2026',t:'Payback-Erinnerung',items:[
+    ['Neu','Bei dm und Edeka erinnert dich der Einkaufsmodus an deine Payback-Karte und zeigt deine Payback-Coupons.'],
+    ['Neu','Einmal pro Woche kommt eine Mitteilung: Payback-Coupons aktivieren. Den Tag wählst du in den Optionen.'],
+    ['Neu','Läuft ein eingetragener Payback-Coupon morgen ab, bekommst du vorher Bescheid.']]},
   {v:'2.8',d:'15.11.2026',t:'Notizen, Coupons & Wetter',items:[
     ['Neu','Neuer Tab Notizen: mit Bildern, Farben, Anheften und Suche.'],
     ['Neu','Coupons unter Angebote: Lidl Plus, Payback, dm-App und Co. Im Einkaufsmodus erinnert dich die App daran.'],
@@ -703,7 +716,7 @@ const lcol=k=>(LAEDEN[k]||[0,'var(--muted)'])[1];
 
 /* ---------- Speicher ---------- */
 const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],notizen:[],coupons:[],
-  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,bg:null,patCol:null,patSize:100,glow:'sanft',glowOp:70,mode:'auto',deko:true,laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
+  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,bg:null,patCol:null,patSize:100,glow:'sanft',glowOp:70,mode:'auto',deko:true,payback:true,paybackTag:0,laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
@@ -916,7 +929,7 @@ async function pushEnable(btn,quiet){
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
-    const j=sub.toJSON(),prefs=(S.push&&S.push.prefs)||{updates:true,termine:true,todos:true};
+    const j=sub.toJSON(),prefs=(S.push&&S.push.prefs)||{updates:true,termine:true,todos:true};prefs.paybackTag=+S.settings.paybackTag||0;if(S.settings.payback===false)prefs.payback=false;
     await editFile('push.json',d=>{d.abos=(d.abos||[]).filter(a=>a.sub&&a.sub.endpoint!==j.endpoint&&a.geraet_id!==S.deviceId);d.abos.push({sub:{endpoint:j.endpoint,keys:j.keys},prefs,geraet:IPAD?'iPad':IOS?'iPhone':'Gerät',geraet_id:S.deviceId,seit:new Date().toISOString()})},'Benachrichtigungen eingeschaltet',{abos:[]});
     S.push={on:true,endpoint:j.endpoint,prefs,idSet:true};save();syncPlan(true);if(!quiet)toast('Eingeschaltet ✿ Gleich kommt eine Begrüßung.',4000);
   }catch(e){if(!quiet)toast(e.status?ghError(e):'Einschalten hat nicht geklappt: '+(e.message||e),6000)}
@@ -1040,7 +1053,7 @@ const qty=it=>Math.max(1,Number(it.menge)||1);
 /* ---------- Oberfläche ---------- */
 let tab='einkauf';
 try{tab=localStorage.getItem(KEY+'-tab')||'einkauf'}catch(e){}
-try{const sp=new URLSearchParams(location.search),q=sp.get('tab');if(sp.get('ansicht'))S.settings.angView=sp.get('ansicht')==='wunsch'?'wunsch':'prospekt';if(q){tab=q;history.replaceState(null,'',location.pathname)}}catch(e){}
+try{const sp=new URLSearchParams(location.search),q=sp.get('tab');if(sp.get('ansicht'))S.settings.angView=['wunsch','coupons'].includes(sp.get('ansicht'))?sp.get('ansicht'):'prospekt';if(q){tab=q;history.replaceState(null,'',location.pathname)}}catch(e){}
 if(!TABS.some(t=>t[0]===tab))tab='einkauf';
 let calMonth=new Date();calMonth.setDate(1);
 let calSel=todayIso();
@@ -1318,6 +1331,7 @@ function vShop(){
     <div class="grow"><div class="muted small" style="font-weight:800">Einkaufsmodus</div><h2>${esc(lname(l))}</h2></div>
     <button class="chip" data-act="shop-wahl">${ic('pin')}Laden</button></div>
   <div class="card pad shop-fort"><div class="flex"><b>${fertig.length} von ${items.length} im Wagen</b><span class="grow"></span><b>${eur(sum(fertig))}</b><span class="muted small">/ ${eur(sum(items))}</span></div><div class="bar"><i style="width:${pct}%;background:var(--lc,${lcol(l)})"></i></div></div>
+  ${paybackKarte(l)}
   ${couponHinweis(l)}
   ${!offen.length&&items.length?`<div class="card empty shop-done"><div class="em">🎉</div><b>Alles im Wagen!</b>Ungefähr ${eur(sum(fertig))}.<div class="flex" style="justify-content:center;margin-top:12px;flex-wrap:wrap"><button class="btn" data-act="bon">${ic('bon')}Kassenzettel scannen</button><button class="btn ghost" data-act="shop-fertig">Fertig</button></div></div>`:''}
   ${!items.length?`<div class="card empty"><div class="em">🧺</div><b>Nichts für ${esc(lname(l))} auf der Liste</b>Wähle oben einen anderen Laden.</div>`:''}
@@ -1358,7 +1372,7 @@ async function standortLeise(){
     const {best}=await naechsterLaden();if(best&&best.d<=200&&shopItems(best.l).some(i=>!i.done)){standortTreffer=best;if(tab==='einkauf'&&!SHOP.laden)softRender()}}catch(e){}
 }
 function standortBanner(){const b=standortTreffer;if(!b||SHOP.laden)return '';
-  return `<button class="shop-start da" data-act="shop-go" data-v="${b.l}" style="--lc:${lcol(b.l)}">${ic('pin')}<span><b>Du bist bei ${esc(lname(b.l))}</b><small>Einkaufsmodus starten · ${shopItems(b.l).filter(i=>!i.done).length} Artikel${couponsFuer(b.l).length?` · ${couponsFuer(b.l).length} Coupon${couponsFuer(b.l).length>1?'s':''}`:''}</small></span>${ic('chev')}</button>`}
+  return `<button class="shop-start da" data-act="shop-go" data-v="${b.l}" style="--lc:${lcol(b.l)}">${ic('pin')}<span><b>Du bist bei ${esc(lname(b.l))}</b><small>Einkaufsmodus starten · ${shopItems(b.l).filter(i=>!i.done).length} Artikel${couponsFuer(b.l).length?` · ${couponsFuer(b.l).length} Coupon${couponsFuer(b.l).length>1?'s':''}`:''}${paybackLaden(b.l)?' · 💳 Payback nicht vergessen':''}</small></span>${ic('chev')}</button>`}
 
 /* ===== Ausgaben-Übersicht ===== */
 function rueckblickSheet(){
@@ -1528,10 +1542,29 @@ function wetterHtml(){
   return `<div class="card wetter"><span class="w-e">${w.c.is_day===0&&w.c.weather_code<=1?'🌙':e}</span><div class="w-b"><div class="w-t"><b>${Math.round(w.c.temperature_2m)}°</b><span>${esc(txt)}${w.ort?' · '+esc(w.ort):''}</span></div><div class="w-tip">${esc(wetterTipp(w))}</div></div><div class="w-r"><span>↑ ${Math.round(w.d.max)}°</span><span>↓ ${Math.round(w.d.min)}°</span>${w.d.regen?`<span>💧 ${w.d.regen} %</span>`:''}</div></div>`;
 }
 
+/* ===== Payback ===== */
+const PAYBACK_LAEDEN=['dm','edeka'];
+const WTAGE=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+function paybackLaden(l){return S.settings.payback!==false&&PAYBACK_LAEDEN.includes(l)}
+function paybackCoupons(){return (S.coupons||[]).filter(c=>couponOk(c)&&(c.app||'')==='Payback')}
+function paybackKarte(l){
+  if(!paybackLaden(l))return '';const cs=paybackCoupons().filter(c=>!c.laden||c.laden===l);
+  return `<div class="card payback"><div class="pb-k"><span class="pb-logo">P</span><div><b>Payback nicht vergessen!</b><small>Karte oder App an der Kasse scannen lassen${cs.length?` · ${cs.length} Coupon${cs.length>1?'s':''} für dich`:''}</small></div></div>
+    ${cs.map(c=>`<div class="ln"><span>🎟️ ${esc(c.text)}${c.bis?` <small class="muted">bis ${esc(fmtDate(c.bis))}</small>`:''}</span><button class="btn ghost sm" data-act="coupon-weg" data-id="${c.id}">Eingelöst</button></div>`).join('')}
+    <div class="flex" style="flex-wrap:wrap;gap:8px;margin-top:8px"><a class="btn sm pb-btn" href="https://www.payback.de/coupons" target="_blank" rel="noopener">Coupons aktivieren</a><button class="btn ghost sm" data-act="coupon-neu-pb">${ic('plus')}Payback-Coupon eintragen</button></div></div>`;
+}
+function paybackOptionen(){
+  const st=S.settings;
+  return `<div class="card pad sec"><h3><span class="pb-logo sm">P</span> Payback-Erinnerung</h3>
+    <label class="herz-opt"><input type="checkbox" data-act="toggle-payback" ${st.payback!==false?'checked':''}><span>Erinnerungen an Payback</span></label>
+    ${st.payback!==false?`<div class="field"><label for="pbTag">Coupons aktivieren – Erinnerung jeden</label><select id="pbTag" data-change="pb-tag">${WTAGE.map((t,i)=>`<option value="${i}" ${+st.paybackTag===i?'selected':''}>${t}</option>`).join('')}</select></div>
+    <p class="note">So erinnert dich die App:<br>• Mitteilung einmal pro Woche: Coupons in der Payback-App aktivieren<br>• Mitteilung, wenn ein eingetragener Payback-Coupon morgen abläuft<br>• Im Einkaufsmodus bei dm und Edeka: „Payback nicht vergessen!“ mit deinen Coupons${S.push&&S.push.on?'':'<br><b>Für die Mitteilungen müssen die Benachrichtigungen oben eingeschaltet sein.</b>'}</p>`:''}</div>`;
+}
+
 /* ===== Coupons ===== */
 const COUPON_APPS=['Lidl Plus','Payback','dm-App','Rossmann-App','Kaufland Card','REWE-App','Edeka-App','Andere'];
 function couponOk(c){return !c.eingeloest&&(!c.bis||c.bis>=todayIso())}
-function couponsFuer(l){return (S.coupons||[]).filter(c=>couponOk(c)&&(!c.laden||c.laden===l))}
+function couponsFuer(l){return (S.coupons||[]).filter(c=>couponOk(c)&&(!c.laden||c.laden===l)&&!(c.app==='Payback'&&paybackLaden(l)))}
 function couponHinweis(l){const cs=couponsFuer(l);if(!cs.length)return '';
   return `<div class="card pad coupon-hint"><b>${ic('ticket')}Denk an deine Coupons</b>${cs.map(c=>`<div class="ln"><span>${esc(c.text)}${c.app?` <small class="muted">· ${esc(c.app)}</small>`:''}</span><button class="btn ghost sm" data-act="coupon-weg" data-id="${c.id}">Eingelöst</button></div>`).join('')}</div>`}
 function vCoupons(){
@@ -1672,7 +1705,7 @@ function vEinkauf(){
   let listHtml='';
   if(!items.length){listHtml=`<div class="card empty"><div class="em">🧺</div><b>Die Liste ist leer</b>Tippe oben ein, was du brauchst. Vorschläge kommen aus deinen Angeboten und früheren Einkäufen.</div>`}
   else{
-    listHtml=`<div class="card list">${order.map(k=>`<div class="group-h"><i class="dot" style="background:${k?lcol(k):'var(--muted)'}"></i>${esc(k?lname(k):'Laden offen')}<b>${sum(groups[k])?eur(sum(groups[k])):''}</b></div>${groups[k].map(row).join('')}`).join('')}
+    listHtml=`<div class="card list">${order.map(k=>`<div class="group-h"><i class="dot" style="background:${k?lcol(k):'var(--muted)'}"></i>${esc(k?lname(k):'Laden offen')}${paybackLaden(k)?'<span class="pb-tag">Payback</span>':''}<b>${sum(groups[k])?eur(sum(groups[k])):''}</b></div>${groups[k].map(row).join('')}`).join('')}
     ${done.length?`<div class="group-h">Im Wagen · ${done.length}<button class="btn ghost sm right" data-act="clear-done" style="text-transform:none;letter-spacing:0">Abgehakte löschen</button></div>${done.map(row).join('')}`:''}</div>`;
   }
   // Preisrechner
@@ -2021,6 +2054,7 @@ function vSettings(){
   return `<div class="view-head"><h2>Optionen</h2></div>
   <div class="cols"><div class="sec">
   ${abzeichenHtml()}
+  ${paybackOptionen()}
   <div class="card pad sec"><h3>Farbthema</h3>
     <div class="themes">${Object.entries(THEMES).map(([k,t])=>`<button class="theme" data-act="set-theme" data-v="${k}" aria-pressed="${st.theme===k}"><div class="sw" style="background:${t.bg}"><i style="background:${t.accent}"></i><i style="background:${t.soft}"></i><i style="background:${t.text}"></i></div><span>${t.name}</span></button>`).join('')}</div>
     <div class="field"><label>Eigene Akzentfarbe</label><div class="colorrow"><input type="color" id="accentPick" value="${st.accent||(THEMES[st.theme]||THEMES.latte).accent}" aria-label="Akzentfarbe wählen"><div class="swatches">${SWATCH.map(c=>`<button data-act="set-accent" data-v="${c}" style="background:${c}" aria-pressed="${st.accent===c}" aria-label="Farbe ${c}"></button>`).join('')}</div></div>
@@ -2052,7 +2086,7 @@ function vSettings(){
       if(!PUSH_OK)return `<p class="note">Benachrichtigungen funktionieren nur in der App vom Home-Bildschirm, auf dem iPhone ab iOS 16.4.</p>`;
       if(!pu.on)return `<p class="note">${GH.on?'Mitteilungen sind noch nicht eingerichtet.':'Verbinde unten den Zugangscode, dann werden die Mitteilungen eingerichtet.'}</p>${GH.on?`<button class="btn" data-act="push-on">${ic('bell')}Jetzt einrichten</button>`:''}`;
       return `<div class="flex"><span class="tag deal">An</span><span class="muted small">auf diesem ${IPAD?'iPad':IOS?'iPhone':'Gerät'}</span></div>
-        <div class="chips" style="flex-wrap:wrap">${[['termine','📅 Termine'],['todos','✅ To-dos'],['updates','🆕 Updates'],['angebote','🏷️ Angebote']].map(([k,l])=>`<button class="chip" data-act="push-pref" data-v="${k}" aria-pressed="${pr[k]!==false}">${l}</button>`).join('')}</div>
+        <div class="chips" style="flex-wrap:wrap">${[['termine','📅 Termine'],['todos','✅ To-dos'],['updates','🆕 Updates'],['angebote','🏷️ Angebote'],['payback','💳 Payback']].map(([k,l])=>`<button class="chip" data-act="push-pref" data-v="${k}" aria-pressed="${pr[k]!==false}">${l}</button>`).join('')}</div>
         <p class="note">Termine: etwa 1 Stunde vorher. Morgens zwischen 7 und 11 Uhr: was heute ansteht. Updates: kurz nachdem es eine neue Version gibt. Angebote: wenn etwas von deiner Merkliste oder Wunschliste im Angebot ist.</p>
         <div class="flex"><button class="btn ghost sm" data-act="push-test">Testnachricht</button></div>`})()}
   </div>
@@ -2152,6 +2186,8 @@ document.addEventListener('click',async e=>{
       addItem(s.o?s.o.produkt:s.name,s.laden,s.o?{wahl:wahlVon(s.o)}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
     // Angebote
     case'rezept':rezeptSheet();setTimeout(()=>{const t=$('#rezeptTxt');if(t)t.focus()},350);break;
+    case'toggle-payback':S.settings.payback=!!b.checked;save();render();if(S.push&&S.push.on){S.push.prefs=S.push.prefs||{};S.push.prefs.payback=S.settings.payback;save();pushUpdate(a=>{a.prefs=S.push.prefs},'Payback-Erinnerung')}break;
+    case'coupon-neu-pb':couponSheet(null);setTimeout(()=>{const a=$('#c-app');if(a)a.value='Payback';const l=$('#c-laden');if(l&&SHOP.laden&&PAYBACK_LAEDEN.includes(SHOP.laden))l.value=SHOP.laden},50);break;
     case'toggle-deko':S.settings.deko=!!b.checked;save();dekoAnwenden();render();break;
     case'share-offer':{const o=(PR.laden[b.dataset.l]||[]).find(x=>String(x.i)===b.dataset.i);if(o)teilen(angebotText(o,b.dataset.l),'Angebot');break}
     case'share-coupon':{const c=S.coupons.find(x=>x.id===b.dataset.id);if(c)teilen(`🎟️ Coupon${c.laden?' für '+lname(c.laden):''}: ${c.text}${c.code?`\nCode: ${c.code}`:''}${c.bis?`\nGültig bis ${fmtDate(c.bis)}`:''}${c.app?`\n(${c.app})`:''}`,'Coupon');break}
@@ -2285,6 +2321,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   if(['accentPick','bgPick','patPick','patSize'].includes(e.target.id))render();
+  if(e.target.id==='pbTag'){S.settings.paybackTag=+e.target.value;save();if(S.push&&S.push.on){S.push.prefs=S.push.prefs||{};S.push.prefs.paybackTag=S.settings.paybackTag;save();pushUpdate(a=>{a.prefs=S.push.prefs},'Payback-Tag')}toast(`Erinnerung jeden ${WTAGE[S.settings.paybackTag]} ✓`)}
   if(e.target.id==='importIn'&&e.target.files[0]){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.einkauf))throw 0;const tk=S.settings.token,repo=S.settings.repo;S=Object.assign({},DEF,d);S.settings=Object.assign({},DEF.settings,d.settings||{},{token:tk,repo});save();applyTheme();render();toast('Wiederhergestellt')}catch(err){toast('Diese Datei passt nicht')}};r.readAsText(e.target.files[0])}
 });
 document.addEventListener('focusin',e=>{if(e.target.id==='addName')showSugg()});
@@ -2343,7 +2380,7 @@ applyTheme();render();
 if(MUST_INSTALL)showInstall();
 else if(mustPush())showPushGate();
 else setTimeout(pushCheck,2500);
-if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{try{const u=new URL(e.data&&e.data.open);const t=u.searchParams.get('tab');if(u.searchParams.get('ansicht')==='wunsch')S.settings.angView='wunsch';if(t)go(t)}catch(_){}});
+if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{try{const u=new URL(e.data&&e.data.open);const t=u.searchParams.get('tab');if(['wunsch','coupons'].includes(u.searchParams.get('ansicht')))S.settings.angView=u.searchParams.get('ansicht');if(t)go(t)}catch(_){}});
 if(GH.on&&!MUST_INSTALL)setTimeout(()=>syncPlan(true),800);
 if(GH.on&&!MUST_INSTALL)setTimeout(wecker,5000);
 if(GH.on&&!MUST_INSTALL){setSync('laden');lastLoad=Date.now();loadRemote(true)}
