@@ -456,6 +456,70 @@ nav.tabs{isolation:isolate}
 .abz-i small{font-size:10.5px;color:var(--muted);line-height:1.2}
 .sec>h3 svg,.card>h3 svg{width:18px;height:18px;vertical-align:-3px;margin-right:4px;color:var(--accent)}
 .shop-head .grow{flex:1;min-width:0}
+
+#deko{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#deko i{position:absolute;top:-30px;font-style:normal;color:#fff;text-shadow:0 0 6px rgba(255,255,255,.6);animation:fall linear infinite;will-change:transform}
+[data-saison=herbst] #deko i,[data-saison=fruehling] #deko i{text-shadow:none}
+[data-saison=sommer] #deko i{color:#f6d365}
+:root:not([data-dark])[data-saison=winter] #deko i,:root:not([data-dark])[data-saison=schnee] #deko i{color:#a9c7e8;text-shadow:none}
+@keyframes fall{0%{transform:translate(0,-5vh) rotate(0)}50%{transform:translate(var(--dx),50vh) rotate(160deg)}100%{transform:translate(0,108vh) rotate(320deg)}}
+.saison-e{font-size:.62em;margin-left:6px;display:inline-block;vertical-align:4px;animation:wackel 4s ease-in-out infinite}
+@keyframes wackel{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
+[data-saison=winter] .lv{background:linear-gradient(135deg,color-mix(in srgb,#c0392b 18%,var(--card)),color-mix(in srgb,#2e7d5b 16%,var(--card)))}
+.lv-cd.advent{display:block;width:fit-content;margin-top:6px;background:color-mix(in srgb,#2e7d5b 18%,transparent);color:color-mix(in srgb,#2e7d5b 70%,var(--text))}
+.deko-opt{flex-wrap:wrap}.deko-opt small{flex-basis:100%;margin-left:30px;font-weight:600}
+.wetter{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(135deg,color-mix(in srgb,#9ab8f5 22%,var(--card)),var(--card))}
+.w-e{font-size:34px;line-height:1;flex:none}
+.w-b{flex:1;min-width:0}
+.w-t{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.w-t b{font-family:var(--f-display);font-size:26px;font-weight:600;line-height:1}
+.w-t span{font-size:13px;font-weight:700;color:var(--muted)}
+.w-tip{font-size:13.5px;font-weight:700;margin-top:3px}
+.w-r{display:grid;gap:1px;font-size:12px;font-weight:800;color:var(--muted);text-align:right;flex:none}
+.coupons{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.coupon{display:flex;align-items:stretch;border-radius:18px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;position:relative;min-width:0}
+.coupon.abgelaufen{opacity:.5}
+.cp-l{flex:none;width:86px;display:grid;align-content:center;justify-items:center;gap:2px;padding:10px 6px;text-align:center;background:var(--lc);color:#fff;font-weight:800;font-size:13px;border-right:2px dashed color-mix(in srgb,#fff 60%,transparent)}
+.cp-l small{font-size:10.5px;opacity:.9;font-weight:700}
+.cp-b{flex:1;min-width:0;display:grid;gap:3px;padding:12px;cursor:pointer}
+.cp-b b{font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.cp-b code{font-size:13px;font-weight:800;background:var(--line);padding:2px 8px;border-radius:8px;width:fit-content;letter-spacing:.06em}
+.cp-b small{font-size:12px;font-weight:700;color:var(--muted)}.cp-b small.bald{color:var(--bad)}
+.cp-a{display:grid;align-content:center;padding:0 4px}
+.coupon-hint b{display:flex;align-items:center;gap:6px;margin-bottom:6px}.coupon-hint b svg{width:18px;height:18px;color:var(--accent)}
+.coupon-hint .ln{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+.pk-share{position:absolute;z-index:2;top:6px;right:6px;width:32px;height:32px;border-radius:50%;border:0;display:grid;place-items:center;background:color-mix(in srgb,var(--card) 88%,transparent);color:var(--text);box-shadow:0 3px 10px -4px rgba(0,0,0,.35);cursor:pointer}
+.pk-share svg{width:16px;height:16px}
+.notiz-top{gap:8px;align-items:stretch}.notiz-top .btn{flex:none}
+.notizen{columns:2 160px;column-gap:10px}
+@media(min-width:700px){.notizen{columns:3 200px}}
+.nk{break-inside:avoid;margin-bottom:10px;border-radius:20px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;animation:pkIn .35s ease both;border:1px solid color-mix(in srgb,var(--surface) 60%,var(--line))}
+.nk[data-farbe]{background:color-mix(in srgb,var(--nf) 30%,var(--card));border-color:color-mix(in srgb,var(--nf) 55%,transparent)}
+.nk-bilder{display:grid;gap:2px;position:relative}
+.nk-bilder.n2{grid-template-columns:1fr 1fr}.nk-bilder.n3{grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr}.nk-bilder.n3 .nb:first-child{grid-row:span 2}
+.nk-bilder .nb{aspect-ratio:4/3;background:var(--line);overflow:hidden}.nk-bilder.n1 .nb{aspect-ratio:auto;max-height:260px}
+.nk-bilder.n3 .nb{aspect-ratio:auto;min-height:60px}
+.nb img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s}.nb img.da{opacity:1}
+.nk-mehr{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-weight:800;font-size:12px;padding:2px 8px;border-radius:999px}
+.nk-b{padding:11px 13px 12px;position:relative;display:grid;gap:4px}
+.nk-b b{font-size:16px;line-height:1.25;padding-right:18px;overflow-wrap:anywhere}
+.nk-b p{margin:0;font-size:14px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;color:color-mix(in srgb,var(--text) 85%,transparent)}
+.nk-b small{font-size:11px;font-weight:700;color:var(--muted)}
+.nk-pin{position:absolute;top:10px;right:10px;color:var(--accent)}.nk-pin svg{width:15px;height:15px}
+.n-titel{font-size:20px!important;font-weight:800}
+.n-bilder{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:10px}
+.n-bilder:empty{display:none}
+.n-bilder .nb{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--line);display:grid;place-items:center}
+.n-bilder .nb img{position:absolute;inset:0}
+.n-bilder .nb .spin{position:relative;z-index:1}
+.nb-x{position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;cursor:pointer;z-index:2}.nb-x svg{width:14px;height:14px}
+.farben{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.farben button{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+.farben button[aria-pressed=true]{box-shadow:0 0 0 3px var(--accent)}
+.ang-seg button{font-size:13px;padding-left:2px;padding-right:2px}
+@media (prefers-reduced-motion:reduce){#deko{display:none}.saison-e{animation:none}}
+@media(max-width:440px){.tab{font-size:9.6px;letter-spacing:-.02em;padding-left:0;padding-right:0}.tab svg{width:21px;height:21px}}
+.notiz-top{display:flex;flex-wrap:nowrap}.notiz-top .pk-search{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -471,8 +535,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.7';
-const BUILD='2026-11-15-0500'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.8';
+const BUILD='2026-11-15-1730'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f']};
@@ -496,6 +560,13 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.8',d:'15.11.2026',t:'Notizen, Coupons & Wetter',items:[
+    ['Neu','Neuer Tab Notizen: mit Bildern, Farben, Anheften und Suche.'],
+    ['Neu','Coupons unter Angebote: Lidl Plus, Payback, dm-App und Co. Im Einkaufsmodus erinnert dich die App daran.'],
+    ['Neu','Wetter auf der Einkaufsseite, mit einem Tipp für den Tag.'],
+    ['Neu','Angebote, Coupons und Notizen kannst du jetzt teilen, zum Beispiel per WhatsApp.'],
+    ['Neu','Jahreszeiten-Deko: Schnee im Dezember, Blüten im Frühling, Blätter im Herbst. In den Optionen ein- und ausschaltbar.'],
+    ['Neu','Hell oder dunkel „Nach Uhrzeit“: ab 19 Uhr gemütlich dunkel, morgens wieder hell.']]},
   {v:'2.7',d:'15.11.2026',t:'Einkaufsmodus & Wunschliste',items:[
     ['Neu','Einkaufsmodus: große Ansicht für den Laden, nach Gängen sortiert. Die App erkennt über den Standort, in welchem Laden du bist.'],
     ['Neu','Angebots-Alarm: Du bekommst eine Mitteilung, wenn etwas von deiner Merkliste im Angebot ist.'],
@@ -586,8 +657,12 @@ const UPDATES=[
     ['Neu','Termine mit Monatskalender und To-do-Liste mit Wichtigkeit und Fälligkeit.'],
     ['Neu','Farbthemen, eigene Akzentfarbe und Muster in den Einstellungen.']]}
 ];
-const TABS=[['einkauf','Einkauf','cart'],['angebote','Angebote','tag'],['termine','Termine','cal'],['todos','To-dos','check'],['updates','Updates','spark'],['einstellungen','Optionen','gear']];
+const TABS=[['einkauf','Einkauf','cart'],['angebote','Angebote','tag'],['termine','Termine','cal'],['todos','To-dos','check'],['notizen','Notizen','note'],['updates','Updates','spark'],['einstellungen','Optionen','gear']];
 const ICONS={
+  note:'<path d="M5 3h10l4 4v14H5z"/><path d="M14.5 3v4.5H19M8.5 12h7M8.5 15.5h7M8.5 8.5h3"/>',
+  img:'<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 4 3.5 2.5-2 4.5 3.5"/>',
+  ticket:'<path d="M3.5 8a2 2 0 0 0 0 4v0a2 2 0 0 1 0 4V18h17v-2a2 2 0 0 1 0-4 2 2 0 0 1 0-4V6h-17z"/><path d="M14 6v12" stroke-dasharray="2 2.2"/>',
+  pinn:'<path d="M9 3h6l-1 6 3 3v1.5H7V12l3-3z"/><path d="M12 13.5V21"/>',
   mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
   bon:'<path d="M6 3h12v18l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4L6 21z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/>',
   chev:'<path d="m9 5 7 7-7 7"/>',
@@ -627,12 +702,12 @@ const lname=k=>(LAEDEN[k]||[k||'Ohne Laden'])[0];
 const lcol=k=>(LAEDEN[k]||[0,'var(--muted)'])[1];
 
 /* ---------- Speicher ---------- */
-const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],
-  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,bg:null,patCol:null,patSize:100,glow:'sanft',glowOp:70,mode:'auto',laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
+const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],notizen:[],coupons:[],
+  settings:{autoSuche:true,theme:'latte',accent:null,pattern:'punkte',patOp:50,bg:null,patCol:null,patSize:100,glow:'sanft',glowOp:70,mode:'auto',deko:true,laeden:Object.keys(LAEDEN),token:'',repo:DEFAULT_REPO,todoFilter:'offen',einkaufLaden:'alle',angLaden:'alle'},
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
-S=Object.assign({},DEF,{haeufig:{}},S);if(!S.deviceId)S.deviceId=uid()+uid();S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
+S=Object.assign({},DEF,{haeufig:{}},S);if(!Array.isArray(S.notizen))S.notizen=[];if(!Array.isArray(S.coupons))S.coupons=[];if(!S.deviceId)S.deviceId=uid()+uid();S.settings=Object.assign({},DEF.settings,S.settings||{});S.settings.repo=DEFAULT_REPO;
 let saveT;
 function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}if(typeof syncPlan==='function')syncPlan()}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
@@ -664,7 +739,7 @@ function patternImg(p,col){
 }
 const PSIZE={tupfen:'36px',kreise:'40px',zickzack:'32px 16px',gitter:'24px',monde:'48px',blaetter:'44px',konfetti:'52px',punkte:'28px',karo:'32px',streifen:'22px',herzen:'44px',bluemchen:'48px',sterne:'46px',wellen:'40px 20px'};
 const mq=matchMedia('(prefers-color-scheme: dark)');
-function isDark(){const st=S.settings,t=THEMES[st.theme]||THEMES.latte;if(st.bg)return lum(st.bg)<.3;return t.dark||st.mode==='dunkel'||(st.mode==='auto'&&mq.matches)}
+function isDark(){const st=S.settings,t=THEMES[st.theme]||THEMES.latte;if(st.bg)return lum(st.bg)<.3;if(st.mode==='zeit'){const h=new Date().getHours();return t.dark||h>=19||h<7}return t.dark||st.mode==='dunkel'||(st.mode==='auto'&&mq.matches)}
 function themeVars(){
   const st=S.settings,t=THEMES[st.theme]||THEMES.latte,dark=isDark();
   let v={...t};if(st.accent)v.accent=st.accent;
@@ -698,6 +773,7 @@ function glowCss(g){return {aus:'none',
   pastell:'radial-gradient(55% 40% at 15% 85%,rgba(255,240,170,.45),transparent 70%),linear-gradient(155deg,rgba(255,170,195,.55) 0%,rgba(165,205,245,.5) 50%,rgba(180,230,165,.5) 100%)',
   aurora:'radial-gradient(60% 40% at 80% 30%,rgba(110,110,255,.4),transparent 70%),linear-gradient(165deg,rgba(55,215,160,.45) 0%,rgba(95,120,250,.4) 50%,rgba(195,80,225,.42) 100%)'}[g]||'none'}
 mq.addEventListener&&mq.addEventListener('change',applyTheme);
+setInterval(()=>{if(S.settings.mode==='zeit'){const d=document.documentElement.hasAttribute('data-dark');if(d!==isDark()){applyTheme();if(tab==='einstellungen')render()}}},60e3);
 
 /* ---------- GitHub-Verbindung ---------- */
 const GH={
@@ -761,7 +837,7 @@ async function editFile(file,fn,msg,leer){
 /* ---------- Gemeinsame Daten: beide iPhones sehen dieselbe Einkaufsliste, Termine und To-dos ---------- */
 // Liegt als gemeinsam.json im privaten Daten-Repo. Pro Eintrag gewinnt die neueste Änderung (u = Zeitstempel),
 // Löschungen werden als "del" gemerkt, damit sie beim anderen Gerät auch verschwinden.
-const SYNC_COLLS=['einkauf','termine','todos'];
+const SYNC_COLLS=['einkauf','termine','todos','notizen','coupons'];
 let syncT,syncBusy=false,syncAgain=false,lastPull=0,renderLater=false;
 const itemHash=o=>{const c={...o};delete c.u;return JSON.stringify(c)};
 function localChanges(mark){
@@ -794,7 +870,7 @@ async function syncShared(){
       const merged=mergeShared(remote);
       const before=snap;
       if(JSON.stringify(SYNC_COLLS.map(c=>remote&&remote[c]))!==JSON.stringify(SYNC_COLLS.map(c=>merged[c]))){
-        try{await GH.writeJson('gemeinsam.json',{...merged,aktualisiert:new Date().toISOString()},sha,'Gemeinsame Liste aktualisiert')}
+        try{await GH.writeJson('gemeinsam.json',{...(remote||{}),...merged,aktualisiert:new Date().toISOString()},sha,'Gemeinsame Liste aktualisiert')}
         catch(e){if(e.status===409||e.status===422)continue;throw e}
       }
       if(JSON.stringify(SYNC_COLLS.map(c=>S[c]))!==snap){syncAgain=true;break} // während des Speicherns wurde lokal weiter geändert
@@ -991,12 +1067,13 @@ function header(){
   $('#greet').textContent=`${g}, Emma · ${d.toLocaleDateString('de-DE',{weekday:'long'})}`;
   $('#dMon').textContent=d.toLocaleDateString('de-DE',{month:'short'}).replace('.','');
   $('#dDay').textContent=d.getDate();
+  dekoAnwenden();
 }
 function render(){
   header();renderTabs();
   const v=$('#view');
   const y=$('#main').scrollTop;
-  try{v.innerHTML={einkauf:vEinkauf,angebote:vAngebote,termine:vTermine,todos:vTodos,updates:vUpdates,einstellungen:vSettings}[tab]()}
+  try{v.innerHTML={einkauf:vEinkauf,angebote:vAngebote,termine:vTermine,todos:vTodos,notizen:vNotizen,updates:vUpdates,einstellungen:vSettings}[tab]()}
   catch(e){console.error(e);v.innerHTML=`<div class="card empty"><b>Hoppla</b>Da ist etwas schiefgelaufen. Lade die App neu.</div>`}
   $('#main').scrollTop=y;
   clearTimeout(render.abzT);render.abzT=setTimeout(abzeichenPruefen,700);
@@ -1180,7 +1257,7 @@ function liebeHtml(){
   const h=herzTermine()[0];let cd='';
   if(h){const d=Math.round((new Date(h.next+'T12:00')-new Date(t+'T12:00'))/864e5);
     cd=d===0?`<div class="lv-cd"><b>Heute</b> ist ${esc(h.title)} ♥</div>`:d<=400?`<div class="lv-cd">Noch <b>${d}</b> ${d===1?'Tag':'Tage'} bis ${esc(h.title)}</div>`:''}
-  return `<div class="card lv"><span class="lv-h" aria-hidden="true">${ic('heart')}</span><div class="lv-b"><div class="lv-t">${esc(msg)}</div><div class="lv-f">von Larsen</div>${cd}</div><button class="icon-btn" data-act="liebe-zu" aria-label="Für heute ausblenden">${ic('x')}</button></div>`;
+  return `<div class="card lv"><span class="lv-h" aria-hidden="true">${ic('heart')}</span><div class="lv-b"><div class="lv-t">${esc(msg)}</div><div class="lv-f">von Larsen</div>${cd}${adventHtml()}</div><button class="icon-btn" data-act="liebe-zu" aria-label="Für heute ausblenden">${ic('x')}</button></div>`;
 }
 /* ===== Haushaltsplan ===== */
 const WDH=[['','Nicht wiederholen'],['d1','Jeden Tag'],['d2','Alle 2 Tage'],['d3','Alle 3 Tage'],['w1','Jede Woche'],['w2','Alle 2 Wochen'],['m1','Jeden Monat']];
@@ -1241,6 +1318,7 @@ function vShop(){
     <div class="grow"><div class="muted small" style="font-weight:800">Einkaufsmodus</div><h2>${esc(lname(l))}</h2></div>
     <button class="chip" data-act="shop-wahl">${ic('pin')}Laden</button></div>
   <div class="card pad shop-fort"><div class="flex"><b>${fertig.length} von ${items.length} im Wagen</b><span class="grow"></span><b>${eur(sum(fertig))}</b><span class="muted small">/ ${eur(sum(items))}</span></div><div class="bar"><i style="width:${pct}%;background:var(--lc,${lcol(l)})"></i></div></div>
+  ${couponHinweis(l)}
   ${!offen.length&&items.length?`<div class="card empty shop-done"><div class="em">🎉</div><b>Alles im Wagen!</b>Ungefähr ${eur(sum(fertig))}.<div class="flex" style="justify-content:center;margin-top:12px;flex-wrap:wrap"><button class="btn" data-act="bon">${ic('bon')}Kassenzettel scannen</button><button class="btn ghost" data-act="shop-fertig">Fertig</button></div></div>`:''}
   ${!items.length?`<div class="card empty"><div class="em">🧺</div><b>Nichts für ${esc(lname(l))} auf der Liste</b>Wähle oben einen anderen Laden.</div>`:''}
   ${GANG_REIHE.filter(g=>gr[g]).map(g=>`<div class="shop-gang"><div class="group-h">${esc(GANG_NAME[g])}<b>${gr[g].length}</b></div><div class="card list">${gr[g].map(row).join('')}</div></div>`).join('')}
@@ -1280,7 +1358,7 @@ async function standortLeise(){
     const {best}=await naechsterLaden();if(best&&best.d<=200&&shopItems(best.l).some(i=>!i.done)){standortTreffer=best;if(tab==='einkauf'&&!SHOP.laden)softRender()}}catch(e){}
 }
 function standortBanner(){const b=standortTreffer;if(!b||SHOP.laden)return '';
-  return `<button class="shop-start da" data-act="shop-go" data-v="${b.l}" style="--lc:${lcol(b.l)}">${ic('pin')}<span><b>Du bist bei ${esc(lname(b.l))}</b><small>Einkaufsmodus starten · ${shopItems(b.l).filter(i=>!i.done).length} Artikel</small></span>${ic('chev')}</button>`}
+  return `<button class="shop-start da" data-act="shop-go" data-v="${b.l}" style="--lc:${lcol(b.l)}">${ic('pin')}<span><b>Du bist bei ${esc(lname(b.l))}</b><small>Einkaufsmodus starten · ${shopItems(b.l).filter(i=>!i.done).length} Artikel${couponsFuer(b.l).length?` · ${couponsFuer(b.l).length} Coupon${couponsFuer(b.l).length>1?'s':''}`:''}</small></span>${ic('chev')}</button>`}
 
 /* ===== Ausgaben-Übersicht ===== */
 function rueckblickSheet(){
@@ -1390,6 +1468,191 @@ function abzeichenHtml(){
   <div class="abz">${ABZEICHEN.map(a=>`<div class="abz-i ${abz[a[0]]?'hat':''}" title="${esc(a[3])}"><span class="abz-e">${abz[a[0]]?a[1]:'🔒'}</span><b>${esc(a[2])}</b><small>${esc(a[3])}</small></div>`).join('')}</div></div>`;
 }
 
+/* ===== Jahreszeiten-Deko ===== */
+function saison(d=new Date()){
+  const m=d.getMonth()+1,t=d.getDate();
+  if(m===12||(m===1&&t<=6))return {id:'winter',emoji:'🎄',teile:['❄','❅','❆','✦'],text:'Im Dezember weihnachtlich mit Schneeflocken'};
+  if(m<=2)return {id:'schnee',emoji:'❄️',teile:['❄','❅','❆'],text:'Im Winter mit leisem Schneefall'};
+  if(m<=5)return {id:'fruehling',emoji:'🌸',teile:['🌸','✿','🌼','❀'],text:'Im Frühling mit Blüten'};
+  if(m<=8)return {id:'sommer',emoji:'☀️',teile:['✦','✧','🦋','·'],text:'Im Sommer mit Glitzern und Schmetterlingen'};
+  return {id:'herbst',emoji:'🍂',teile:['🍂','🍁','🍂','🌰'],text:'Im Herbst mit fallenden Blättern'};
+}
+function dekoAnwenden(){
+  const an=S.settings.deko!==false&&!REDUCE,sz=saison(),el=document.getElementById('deko');
+  document.documentElement.dataset.saison=an?sz.id:'';
+  const h1=document.querySelector('.hello h1');
+  if(h1){let e=h1.querySelector('.saison-e');if(an){if(!e){e=document.createElement('span');e.className='saison-e';e.setAttribute('aria-hidden','true');h1.appendChild(e)}e.textContent=sz.emoji}else if(e)e.remove()}
+  if(!an){if(el)el.remove();return}
+  if(el&&el.dataset.s===sz.id)return;if(el)el.remove();
+  const box=document.createElement('div');box.id='deko';box.dataset.s=sz.id;box.setAttribute('aria-hidden','true');
+  const n=sz.id==='winter'?22:14;
+  for(let i=0;i<n;i++){const f=document.createElement('i');f.textContent=sz.teile[i%sz.teile.length];
+    f.style.left=(Math.random()*100)+'%';f.style.fontSize=(10+Math.random()*(sz.id==='winter'?12:10))+'px';
+    f.style.animationDuration=(14+Math.random()*16)+'s';f.style.animationDelay=(-Math.random()*30)+'s';f.style.setProperty('--dx',(Math.random()*80-40)+'px');
+    f.style.opacity=(.35+Math.random()*.4).toFixed(2);box.appendChild(f)}
+  document.body.prepend(box);
+}
+function adventHtml(){const d=new Date(),y=d.getFullYear(),x=new Date(y,11,24);if(S.settings.deko===false||d.getMonth()!==11||d>x)return '';
+  const n=Math.ceil((x-new Date(y,d.getMonth(),d.getDate()))/864e5);return `<div class="lv-cd advent">🎄 ${n===0?'<b>Heute ist Heiligabend!</b>':`Noch <b>${n}</b> ${n===1?'Tag':'Tage'} bis Weihnachten`}</div>`}
+
+/* ===== Wetter (Open-Meteo, kostenlos, ohne Schlüssel) ===== */
+const WETTER={d:null,laed:false};
+const WCODE={0:['☀️','Sonnig'],1:['🌤️','Überwiegend sonnig'],2:['⛅','Teils bewölkt'],3:['☁️','Bewölkt'],45:['🌫️','Nebel'],48:['🌫️','Nebel mit Reif'],51:['🌦️','Leichter Niesel'],53:['🌦️','Nieselregen'],55:['🌧️','Starker Niesel'],56:['🌧️','Gefrierender Niesel'],57:['🌧️','Gefrierender Niesel'],61:['🌧️','Leichter Regen'],63:['🌧️','Regen'],65:['🌧️','Starker Regen'],66:['🌧️','Eisregen'],67:['🌧️','Eisregen'],71:['🌨️','Leichter Schneefall'],73:['🌨️','Schneefall'],75:['❄️','Starker Schneefall'],77:['🌨️','Schneegriesel'],80:['🌦️','Regenschauer'],81:['🌧️','Regenschauer'],82:['⛈️','Heftige Schauer'],85:['🌨️','Schneeschauer'],86:['🌨️','Schneeschauer'],95:['⛈️','Gewitter'],96:['⛈️','Gewitter mit Hagel'],99:['⛈️','Gewitter mit Hagel']};
+async function wetterLaden(){
+  if(WETTER.laed)return;const alt=S.wetter;if(alt&&Date.now()-alt.t<30*6e4){WETTER.d=alt;return}
+  WETTER.laed=true;
+  try{let lat=48.4029,lon=11.7488,ort='Freising';
+    if(S.settings.standortOk){try{const st=navigator.permissions?await navigator.permissions.query({name:'geolocation'}):null;if(!st||st.state==='granted'){const c=await position();lat=+c.latitude.toFixed(2);lon=+c.longitude.toFixed(2);ort=''}}catch(e){}}
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max&hourly=precipitation_probability&forecast_hours=12&timezone=Europe%2FBerlin&forecast_days=1`;
+    const r=await fetch(u);if(!r.ok)throw 0;const j=await r.json();
+    S.wetter={t:Date.now(),ort,c:j.current,d:{code:j.daily.weather_code[0],max:j.daily.temperature_2m_max[0],min:j.daily.temperature_2m_min[0],regen:j.daily.precipitation_probability_max[0],uv:j.daily.uv_index_max[0]},h:(j.hourly?.precipitation_probability||[]).slice(0,10)};
+    WETTER.d=S.wetter;save();if(tab==='einkauf'&&!SHOP.laden)softRender();
+  }catch(e){}finally{WETTER.laed=false}
+}
+function wetterTipp(w){
+  const c=w.c||{},d=w.d||{},code=c.weather_code,t=c.temperature_2m,regenBald=Math.max(0,...(w.h||[0]));
+  if([95,96,99].includes(code))return 'Gewitter – lieber drinnen bleiben ⚡';
+  if(code>=71&&code<=86&&code!==80&&code!==81&&code!==82)return 'Es schneit – warm anziehen und vorsichtig fahren ❄️';
+  if(t<=1)return 'Glättegefahr – warme Jacke, Mütze und vorsichtig sein 🧣';
+  if((code>=51&&code<=67)||(code>=80&&code<=82))return 'Es regnet – Schirm nicht vergessen ☔';
+  if(regenBald>=60)return 'Später wird es nass – nimm einen Schirm mit ☔';
+  if(t>=28)return 'Heiß heute – viel trinken und Sonnencreme 🧴';
+  if((d.uv||0)>=6)return 'Starke Sonne – Sonnencreme und Sonnenbrille 😎';
+  if(t<8)return 'Frisch draußen – Jacke an 🧥';
+  if(code<=1)return 'Schönes Wetter – genieß den Tag ✿';
+  return 'Angenehmer Tag – vielleicht ein kleiner Spaziergang?';
+}
+function wetterHtml(){
+  if(S.settings.wetter===false)return '';wetterLaden();const w=WETTER.d||S.wetter;if(!w||!w.c)return '';
+  const [e,txt]=WCODE[w.c.weather_code]||['🌡️',''];
+  return `<div class="card wetter"><span class="w-e">${w.c.is_day===0&&w.c.weather_code<=1?'🌙':e}</span><div class="w-b"><div class="w-t"><b>${Math.round(w.c.temperature_2m)}°</b><span>${esc(txt)}${w.ort?' · '+esc(w.ort):''}</span></div><div class="w-tip">${esc(wetterTipp(w))}</div></div><div class="w-r"><span>↑ ${Math.round(w.d.max)}°</span><span>↓ ${Math.round(w.d.min)}°</span>${w.d.regen?`<span>💧 ${w.d.regen} %</span>`:''}</div></div>`;
+}
+
+/* ===== Coupons ===== */
+const COUPON_APPS=['Lidl Plus','Payback','dm-App','Rossmann-App','Kaufland Card','REWE-App','Edeka-App','Andere'];
+function couponOk(c){return !c.eingeloest&&(!c.bis||c.bis>=todayIso())}
+function couponsFuer(l){return (S.coupons||[]).filter(c=>couponOk(c)&&(!c.laden||c.laden===l))}
+function couponHinweis(l){const cs=couponsFuer(l);if(!cs.length)return '';
+  return `<div class="card pad coupon-hint"><b>${ic('ticket')}Denk an deine Coupons</b>${cs.map(c=>`<div class="ln"><span>${esc(c.text)}${c.app?` <small class="muted">· ${esc(c.app)}</small>`:''}</span><button class="btn ghost sm" data-act="coupon-weg" data-id="${c.id}">Eingelöst</button></div>`).join('')}</div>`}
+function vCoupons(){
+  const t=todayIso(),list=(S.coupons||[]).filter(c=>!c.eingeloest).sort((a,b)=>(a.bis||'9').localeCompare(b.bis||'9'));
+  return `<button class="btn" style="width:100%" data-act="coupon-neu">${ic('plus')}Coupon hinzufügen</button>
+  <p class="note" style="margin:0 4px">Trag Coupons aus Lidl Plus, Payback oder der dm-App ein. Im Einkaufsmodus erinnert dich die App daran.</p>
+  ${!list.length?`<div class="card empty"><div class="em">🎟️</div><b>Noch keine Coupons</b>Zum Beispiel „20 % auf Kaffee“ oder „10-fach Punkte“.</div>`:''}
+  <div class="coupons">${list.map(c=>{const ab=c.bis&&c.bis<t,bald=c.bis&&!ab&&(new Date(c.bis)-new Date(t))/864e5<=2;return `<div class="coupon ${ab?'abgelaufen':''}" style="--lc:${c.laden?lcol(c.laden):'var(--accent)'}">
+    <div class="cp-l"><span>${esc(c.laden?lname(c.laden):'Alle Läden')}</span>${c.app?`<small>${esc(c.app)}</small>`:''}</div>
+    <div class="cp-b" data-act="coupon-edit" data-id="${c.id}"><b>${esc(c.text)}</b>${c.code?`<code>${esc(c.code)}</code>`:''}<small class="${bald?'bald':''}">${ab?'Abgelaufen':c.bis?(bald?'Nur noch bis ':'Gültig bis ')+fmtDate(c.bis,{weekday:'short',day:'numeric',month:'short'}):'Ohne Ablaufdatum'}</small></div>
+    <div class="cp-a"><button class="icon-btn" data-act="coupon-weg" data-id="${c.id}" aria-label="Als eingelöst markieren">${ic('tick')}</button><button class="icon-btn" data-act="share-coupon" data-id="${c.id}" aria-label="Teilen">${ic('share')}</button></div></div>`}).join('')}</div>`;
+}
+function couponSheet(c){
+  const neu=!c;c=c||{id:uid(),laden:'',app:'',text:'',code:'',bis:''};
+  openSheet(`<div class="sheet-head"><h3>${neu?'Neuer Coupon':'Coupon'}</h3><button class="icon-btn" data-act="close" aria-label="Schließen">${ic('x')}</button></div>
+  <div class="fields">
+    <div class="field full"><label for="c-text">Was gibt es?</label><input id="c-text" value="${esc(c.text)}" placeholder="z. B. 20 % auf Kaffee"></div>
+    <div class="field"><label for="c-laden">Laden</label>${storeSelect('c-laden',c.laden,true,'Alle Läden')}</div>
+    <div class="field"><label for="c-app">App / Karte</label><select id="c-app"><option value="">–</option>${COUPON_APPS.map(a=>`<option ${c.app===a?'selected':''}>${a}</option>`).join('')}</select></div>
+    <div class="field"><label for="c-bis">Gültig bis</label><input id="c-bis" type="date" value="${c.bis||''}"></div>
+    <div class="field"><label for="c-code">Code (optional)</label><input id="c-code" value="${esc(c.code||'')}" autocomplete="off"></div>
+  </div>
+  <div class="sheet-actions">${neu?'<span></span>':`<button class="btn danger" data-act="coupon-del" data-id="${c.id}">${ic('trash')}Löschen</button>`}<button class="btn" data-act="coupon-save" data-id="${c.id}">Speichern</button></div>`);
+}
+
+/* ===== Notizen mit Bildern ===== */
+const BILD={url:new Map(),laed:new Map()};
+const BILD_CACHE='emmas-bilder-v1';
+async function bildUrl(pfad){
+  if(BILD.url.has(pfad))return BILD.url.get(pfad);if(BILD.laed.has(pfad))return BILD.laed.get(pfad);
+  const pr=(async()=>{const key='https://bilder.emmas-planner.local/'+pfad;let blob=null;
+    try{const c=await caches.open(BILD_CACHE);const r=await c.match(key);if(r)blob=await r.blob()}catch(e){}
+    if(!blob){const r=await fetch(`https://api.github.com/repos/${S.settings.repo}/contents/${pfad}`,{headers:{'Authorization':'Bearer '+S.settings.token.trim(),'Accept':'application/vnd.github.raw+json'}});if(!r.ok)throw r.status;blob=await r.blob();
+      try{const c=await caches.open(BILD_CACHE);await c.put(key,new Response(blob,{headers:{'Content-Type':'image/jpeg'}}))}catch(e){}}
+    const u=URL.createObjectURL(blob);BILD.url.set(pfad,u);return u})();
+  BILD.laed.set(pfad,pr);pr.catch(()=>BILD.laed.delete(pfad));return pr;
+}
+function bilderEinsetzen(root=document){root.querySelectorAll('img[data-bild]:not([src])').forEach(im=>{bildUrl(im.dataset.bild).then(u=>{im.src=u;im.classList.add('da')}).catch(()=>{im.closest('.nb')?.classList.add('fehlt')})})}
+async function bildFarbe(file,max=1500){
+  const url=URL.createObjectURL(file);try{const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url});
+    const sc=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.8);return {b64:data.split(',')[1],data}}finally{URL.revokeObjectURL(url)}
+}
+const NOTIZ_FARBEN=[['','Standard'],['#f6d365','Gelb'],['#f4b6c2','Rosa'],['#8fd3b6','Mint'],['#9ab8f5','Blau'],['#c7a6f2','Lila'],['#f2a65a','Orange']];
+let notizQ='';
+function vNotizen(){
+  const q=wortListe(notizQ),list=S.notizen.filter(n=>!q.length||q.every(w=>norm((n.titel||'')+' '+(n.text||'')).includes(w)))
+    .sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.geaendert||b.u||0)-(a.geaendert||a.u||0));
+  setTimeout(()=>bilderEinsetzen($('#view')),0);
+  return `<div class="view-head"><h2>Notizen</h2><span class="sub">${S.notizen.length}</span></div>
+  <div class="flex notiz-top"><label class="pk-search grow">${ic('search')}<input id="notizQ" type="search" value="${esc(notizQ)}" placeholder="Notizen durchsuchen" aria-label="Notizen durchsuchen"></label><button class="btn" data-act="notiz-neu">${ic('plus')}Neu</button></div>
+  ${!S.notizen.length?`<div class="card empty"><div class="em">📝</div><b>Noch keine Notizen</b>Für Ideen, Rezepte, Screenshots oder alles, was du nicht vergessen willst. Bilder kannst du direkt einfügen.</div>`:''}
+  <div class="notizen" id="notizList">${list.map(notizKarte).join('')}</div>`;
+}
+function notizKarte(n){
+  const b=n.bilder||[];
+  return `<div class="nk" data-act="notiz-edit" data-id="${n.id}" style="${n.farbe?`--nf:${n.farbe}`:''}" ${n.farbe?'data-farbe':''}>
+    ${b.length?`<div class="nk-bilder n${Math.min(b.length,3)}">${b.slice(0,3).map(x=>`<div class="nb"><img data-bild="${esc(x)}" alt=""></div>`).join('')}${b.length>3?`<span class="nk-mehr">+${b.length-3}</span>`:''}</div>`:''}
+    <div class="nk-b">${n.pin?`<span class="nk-pin">${ic('pinn')}</span>`:''}${n.titel?`<b>${esc(n.titel)}</b>`:''}${n.text?`<p>${esc(n.text.slice(0,260))}${n.text.length>260?'…':''}</p>`:''}<small>${fmtDT(new Date(n.geaendert||n.u||Date.now()).toISOString())}</small></div></div>`;
+}
+let notizEdit=null;
+function notizSheet(n){
+  notizEdit=JSON.parse(JSON.stringify(n||{id:uid(),titel:'',text:'',bilder:[],farbe:'',pin:false}));notizEdit._neu=!n;
+  openSheet(`<div class="sheet-head"><h3>${n?'Notiz':'Neue Notiz'}</h3><button class="icon-btn" data-act="notiz-zu" aria-label="Schließen">${ic('x')}</button></div>
+  <div class="field full"><input id="n-titel" class="n-titel" value="${esc(notizEdit.titel)}" placeholder="Titel"></div>
+  <div class="field full"><textarea id="n-text" rows="7" placeholder="Schreib etwas …">${esc(notizEdit.text)}</textarea></div>
+  <div id="n-bilder" class="n-bilder"></div>
+  <div class="flex" style="flex-wrap:wrap;gap:8px;margin-top:10px">
+    <button class="btn ghost sm" data-act="notiz-bild">${ic('img')}Bild einfügen</button>
+    <button class="btn ghost sm" data-act="notiz-pin" aria-pressed="${!!notizEdit.pin}">${ic('pinn')}${notizEdit.pin?'Angeheftet':'Anheften'}</button>
+    ${n?`<button class="btn ghost sm" data-act="share-notiz">${ic('share')}Teilen</button>`:''}
+  </div>
+  <div class="farben" role="group" aria-label="Farbe">${NOTIZ_FARBEN.map(([c,l])=>`<button data-act="notiz-farbe" data-v="${c}" aria-label="${l}" aria-pressed="${(notizEdit.farbe||'')===c}" style="background:${c||'var(--card)'}"></button>`).join('')}</div>
+  <div class="sheet-actions">${n?`<button class="btn danger" data-act="notiz-del" data-id="${notizEdit.id}">${ic('trash')}Löschen</button>`:'<span></span>'}<button class="btn" data-act="notiz-save">Speichern</button></div>`);
+  notizBilderZeigen();
+}
+function notizBilderZeigen(){
+  const box=$('#n-bilder');if(!box||!notizEdit)return;
+  box.innerHTML=(notizEdit.bilder||[]).map((b,i)=>`<div class="nb"><img ${typeof b==='string'?`data-bild="${esc(b)}"`:`src="${b.data}" class="da"`} alt="Bild ${i+1}">${typeof b==='string'?'':'<span class="spin"></span>'}<button class="nb-x" data-act="notiz-bild-weg" data-i="${i}" aria-label="Bild entfernen">${ic('x')}</button></div>`).join('');
+  bilderEinsetzen(box);
+}
+function notizBildWaehlen(){const i=document.createElement('input');i.type='file';i.accept='image/*';i.multiple=true;
+  i.onchange=async()=>{const fs=[...(i.files||[])].slice(0,6);const ed=notizEdit;if(!ed)return;
+    for(const f of fs){try{const {b64,data}=await bildFarbe(f);const tmp={tmp:uid(),data};ed.bilder.push(tmp);notizBilderZeigen();
+      const pfad=`notizen/${ed.id}-${uid().slice(0,6)}.jpg`;
+      GH.req(`/contents/${pfad}`,{method:'PUT',body:JSON.stringify({message:'Bild für Notiz',content:b64})}).then(async()=>{
+        try{const c=await caches.open(BILD_CACHE);const bl=await (await fetch(data)).blob();await c.put('https://bilder.emmas-planner.local/'+pfad,new Response(bl,{headers:{'Content-Type':'image/jpeg'}}))}catch(e){}
+        const j=ed.bilder.indexOf(tmp);if(j>=0)ed.bilder[j]=pfad;
+        if(notizEdit===ed)notizBilderZeigen();if(ed._warte&&ed.bilder.every(b=>typeof b==='string'))notizSpeichern(ed);
+      }).catch(()=>{const j=ed.bilder.indexOf(tmp);if(j>=0)ed.bilder.splice(j,1);if(notizEdit===ed)notizBilderZeigen();toast('Ein Bild konnte nicht hochgeladen werden')});
+    }catch(e){toast('Dieses Bild konnte nicht gelesen werden')}}};
+  i.click()}
+function notizSpeichern(ed=notizEdit){
+  if(!ed)return;
+  if(notizEdit===ed&&$('#n-titel')){ed.titel=val('n-titel').trim();ed.text=$('#n-text').value.replace(/\s+$/,'')}
+  if((ed.bilder||[]).some(b=>typeof b!=='string')){ed._warte=true;const bt=document.querySelector('[data-act=notiz-save]');if(bt){bt.disabled=true;bt.innerHTML='<span class="spin"></span>Bilder laden hoch …'}return}
+  const i=S.notizen.findIndex(x=>x.id===ed.id),alt=i>=0?S.notizen[i]:null;
+  const leer=!ed.titel&&!ed.text&&!(ed.bilder||[]).length;
+  for(const pf of (alt?.bilder||[]))if(!(ed.bilder||[]).includes(pf))bildLoeschen(pf);
+  if(leer){if(i>=0)S.notizen.splice(i,1)}
+  else{const fertig={id:ed.id,titel:ed.titel,text:ed.text,bilder:ed.bilder||[],farbe:ed.farbe||'',pin:!!ed.pin,geaendert:Date.now()};
+    if(alt&&alt.titel===fertig.titel&&alt.text===fertig.text&&JSON.stringify(alt.bilder||[])===JSON.stringify(fertig.bilder)&&(alt.farbe||'')===fertig.farbe&&!!alt.pin===fertig.pin){}
+    else if(i>=0)S.notizen[i]=fertig;else S.notizen.unshift(fertig)}
+  save();if(notizEdit===ed){notizEdit=null;closeSheet()}if(tab==='notizen')render();
+}
+async function bildLoeschen(pfad){try{const r=await GH.req(`/contents/${pfad}`);await GH.req(`/contents/${pfad}`,{method:'DELETE',body:JSON.stringify({message:'Bild gelöscht',sha:r.sha})})}catch(e){}}
+
+/* ===== Teilen ===== */
+async function teilen(text,titel,dateien){
+  try{
+    if(dateien&&dateien.length&&navigator.canShare&&navigator.canShare({files:dateien})){await navigator.share({title:titel,text,files:dateien});return}
+    if(navigator.share){await navigator.share({title:titel,text});return}
+  }catch(e){if(e&&e.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(text);toast('Kopiert – du kannst es jetzt in WhatsApp einfügen')}catch(e){toast('Teilen geht hier leider nicht')}
+}
+function angebotText(o,l){
+  const alt=o.a&&o.p&&o.a>o.p?` statt ${eur(o.a)}`:'';
+  const wann=o.v&&o.v>todayIso()?`ab ${fmtDate(o.v,{weekday:'short',day:'numeric',month:'numeric'})}`:o.b?`bis ${fmtDate(o.b,{weekday:'short',day:'numeric',month:'numeric'})}`:'';
+  return `🏷️ Angebot bei ${lname(l)}\n${prospTitel(o)}${o.d&&o.d!=='Details im Prospekt'?` (${o.d})`:''}\n${o.p?`💶 ${eur(o.p)}${alt}`:`💶 ${o.r||''}`}${o.g&&o.e&&o.p&&Math.abs(o.g-o.p)>.005?` · ${eur(o.g)}/${o.e}`:''}${wann?`\n📅 ${wann}`:''}`;
+}
+
 function vEinkauf(){
   if(SHOP.laden)return vShop();
   const sel=S.settings.einkaufLaden;
@@ -1433,6 +1696,7 @@ function vEinkauf(){
   const openNames=new Set(S.einkauf.filter(i=>!i.done).map(i=>norm(i.name)));
   const quick=Object.values(S.haeufig||{}).filter(h=>!openNames.has(norm(h.name))).sort((a,b)=>b.n-a.n||b.t-a.t).slice(0,10);
   return `<div class="view-head"><h2>Einkaufsliste</h2><div class="head-actions"><span class="sub">${open.length} offen</span><button class="icon-btn" data-act="rezept" aria-label="Rezept-Zutaten einfügen">${ic('book')}</button><button class="icon-btn" data-act="bon" aria-label="Kassenzettel scannen">${ic('bon')}</button>${S.einkauf.length?`<button class="icon-btn" data-act="share-list" aria-label="Liste teilen">${ic('share')}</button>`:''}</div></div>
+  ${wetterHtml()}
   ${liebeHtml()}
   ${standortBanner()}
   ${open.length?`<button class="shop-start" data-act="shop-start">${ic('cart')}<span><b>Einkaufen gehen</b><small>Große Ansicht für den Laden, nach Gängen sortiert</small></span>${ic('chev')}</button>`:''}
@@ -1589,7 +1853,7 @@ function prospKarte(o,mk,l){
   const btn=m&&m.direkt?`<button class="pk-add on" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="Von der Einkaufsliste nehmen">${ic('tick')}</button>`
     :`<button class="pk-add" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="${esc(prospTitel(o))} auf die Einkaufsliste">${ic('plus')}</button>`;
   return `<div class="pk${m?' mine '+m.art:''}">
-    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">🏷️</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}</div>
+    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">🏷️</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}<button class="pk-share" data-act="share-offer" data-l="${l}" data-i="${o.i}" aria-label="Angebot teilen">${ic('share')}</button></div>
     ${markHtml}
     <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
     <div class="pk-f"><div class="pk-p">${o.p?`<b>${eur(o.p)}</b>`:`<b class="pk-r">${esc(o.r||'Angebot')}</b>`}${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.p&&o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
@@ -1632,7 +1896,8 @@ function vProspekte(){
 }
 function vAngebote(){
   const v=S.settings.angView||'prospekt';
-  const seg=`<div class="seg ang-seg"><button data-act="set-aview" data-v="prospekt" aria-pressed="${v==='prospekt'}">Prospekte</button><button data-act="set-aview" data-v="merk" aria-pressed="${v==='merk'}">Merkliste</button><button data-act="set-aview" data-v="wunsch" aria-pressed="${v==='wunsch'}">Wunschliste</button></div>`;
+  const seg=`<div class="seg ang-seg"><button data-act="set-aview" data-v="prospekt" aria-pressed="${v==='prospekt'}">Prospekte</button><button data-act="set-aview" data-v="merk" aria-pressed="${v==='merk'}">Merkliste</button><button data-act="set-aview" data-v="wunsch" aria-pressed="${v==='wunsch'}">Wünsche</button><button data-act="set-aview" data-v="coupons" aria-pressed="${v==='coupons'}">Coupons</button></div>`;
+  if(v==='coupons')return `<div class="view-head"><h2>Angebote</h2></div>`+seg+vCoupons();
   if(v==='wunsch')return `<div class="view-head"><h2>Angebote</h2></div>`+seg+vWunsch();
   if(v==='prospekt')return `<div class="view-head"><h2>Angebote</h2></div>`+seg+vProspekte();
   return vMerk(seg);
@@ -1760,7 +2025,8 @@ function vSettings(){
     <div class="themes">${Object.entries(THEMES).map(([k,t])=>`<button class="theme" data-act="set-theme" data-v="${k}" aria-pressed="${st.theme===k}"><div class="sw" style="background:${t.bg}"><i style="background:${t.accent}"></i><i style="background:${t.soft}"></i><i style="background:${t.text}"></i></div><span>${t.name}</span></button>`).join('')}</div>
     <div class="field"><label>Eigene Akzentfarbe</label><div class="colorrow"><input type="color" id="accentPick" value="${st.accent||(THEMES[st.theme]||THEMES.latte).accent}" aria-label="Akzentfarbe wählen"><div class="swatches">${SWATCH.map(c=>`<button data-act="set-accent" data-v="${c}" style="background:${c}" aria-pressed="${st.accent===c}" aria-label="Farbe ${c}"></button>`).join('')}</div></div>
     ${st.accent?`<button class="btn ghost sm" style="align-self:flex-start" data-act="set-accent" data-v="">Themenfarbe zurück</button>`:''}</div>
-    <div class="field"><label>Hell oder dunkel</label><div class="seg">${[['auto','Automatisch'],['hell','Hell'],['dunkel','Dunkel']].map(([k,l])=>`<button data-act="set-mode" data-v="${k}" aria-pressed="${st.mode===k}" ${THEMES[st.theme]?.dark?'disabled':''}>${l}</button>`).join('')}</div></div>
+    <div class="field"><label>Hell oder dunkel</label><div class="seg">${[['auto','Wie iPhone'],['zeit','Nach Uhrzeit'],['hell','Hell'],['dunkel','Dunkel']].map(([k,l])=>`<button data-act="set-mode" data-v="${k}" aria-pressed="${st.mode===k}" ${THEMES[st.theme]?.dark?'disabled':''}>${l}</button>`).join('')}</div>${st.mode==='zeit'?'<p class="note small" style="margin:6px 2px 0">Ab 19 Uhr dunkel und gemütlich, ab 7 Uhr wieder hell.</p>':''}</div>
+    <label class="herz-opt deko-opt"><input type="checkbox" data-act="toggle-deko" ${st.deko!==false?'checked':''}><span>${saison().emoji} Jahreszeiten-Deko</span><small class="muted">${esc(saison().text)}</small></label>
   </div>
   <div class="card pad sec"><h3>Hintergrund</h3>
     <div class="field"><label>Hintergrundfarbe</label><div class="optrow colorrow"><input type="color" id="bgPick" value="${st.bg||(v.bg.startsWith('#')?v.bg:'#f6efe4')}" aria-label="Hintergrundfarbe wählen" style="width:46px;height:46px;border:0;border-radius:50%;padding:0;background:none"><div class="swatches bgs">${BG_PRESETS.map(([c,n])=>`<button data-act="set-bg" data-v="${c}" style="background:${c}" aria-pressed="${st.bg===c}" aria-label="${n}" title="${n}"></button>`).join('')}</div></div>
@@ -1886,6 +2152,28 @@ document.addEventListener('click',async e=>{
       addItem(s.o?s.o.produkt:s.name,s.laden,s.o?{wahl:wahlVon(s.o)}:{});suggQ='';render();toast(`„${s.name}“ hinzugefügt`);break}
     // Angebote
     case'rezept':rezeptSheet();setTimeout(()=>{const t=$('#rezeptTxt');if(t)t.focus()},350);break;
+    case'toggle-deko':S.settings.deko=!!b.checked;save();dekoAnwenden();render();break;
+    case'share-offer':{const o=(PR.laden[b.dataset.l]||[]).find(x=>String(x.i)===b.dataset.i);if(o)teilen(angebotText(o,b.dataset.l),'Angebot');break}
+    case'share-coupon':{const c=S.coupons.find(x=>x.id===b.dataset.id);if(c)teilen(`🎟️ Coupon${c.laden?' für '+lname(c.laden):''}: ${c.text}${c.code?`\nCode: ${c.code}`:''}${c.bis?`\nGültig bis ${fmtDate(c.bis)}`:''}${c.app?`\n(${c.app})`:''}`,'Coupon');break}
+    case'share-notiz':{const ed=notizEdit;if(!ed)break;const tx=[ed.titel||val('n-titel'),$('#n-text')?.value||ed.text].filter(Boolean).join('\n\n');
+      const files=[];for(const pf of (ed.bilder||[]).filter(x=>typeof x==='string').slice(0,4)){try{const u=await bildUrl(pf);const bl=await (await fetch(u)).blob();files.push(new File([bl],pf.split('/').pop(),{type:'image/jpeg'}))}catch(e){}}
+      teilen(tx,ed.titel||'Notiz',files);break}
+    case'coupon-neu':couponSheet(null);break;
+    case'coupon-edit':couponSheet(S.coupons.find(x=>x.id===b.dataset.id));break;
+    case'coupon-save':{const t=val('c-text').trim();if(!t){toast('Was gibt es? Bitte kurz eintragen');break}
+      const c={id:b.dataset.id,text:t,laden:val('c-laden')||'',app:val('c-app')||'',bis:val('c-bis')||'',code:val('c-code').trim()};
+      const i=S.coupons.findIndex(x=>x.id===c.id);if(i>=0)S.coupons[i]={...S.coupons[i],...c};else S.coupons.unshift(c);save();closeSheet();render();toast('Coupon gespeichert 🎟️');break}
+    case'coupon-del':S.coupons=S.coupons.filter(x=>x.id!==b.dataset.id);save();closeSheet();render();break;
+    case'coupon-weg':{const c=S.coupons.find(x=>x.id===b.dataset.id);if(!c)break;c.eingeloest=todayIso();zaehl('coupons');save();render();toast('Eingelöst ✓',3000,{label:'Rückgängig',fn:()=>{delete c.eingeloest;save();render()}});break}
+    case'notiz-neu':notizSheet(null);setTimeout(()=>{const t=$('#n-text');if(t)t.focus()},350);break;
+    case'notiz-edit':notizSheet(S.notizen.find(x=>x.id===b.dataset.id));break;
+    case'notiz-save':case'notiz-zu':notizSpeichern();if(b.dataset.act==='notiz-zu'&&notizEdit&&notizEdit._warte){closeSheet();toast('Bilder werden noch hochgeladen, die Notiz speichert sich gleich')}break;
+    case'notiz-bild':notizBildWaehlen();break;
+    case'notiz-bild-weg':if(notizEdit){notizEdit.bilder.splice(+b.dataset.i,1);notizBilderZeigen()}break;
+    case'notiz-pin':if(notizEdit){notizEdit.pin=!notizEdit.pin;b.setAttribute('aria-pressed',notizEdit.pin);b.lastChild.textContent=notizEdit.pin?'Angeheftet':'Anheften'}break;
+    case'notiz-farbe':if(notizEdit){notizEdit.farbe=b.dataset.v;b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))}break;
+    case'notiz-del':{const i=S.notizen.findIndex(x=>x.id===b.dataset.id);if(i<0){notizEdit=null;closeSheet();break}const [n]=S.notizen.splice(i,1);notizEdit=null;save();closeSheet();render();
+      const t=setTimeout(()=>(n.bilder||[]).forEach(bildLoeschen),6000);toast('Notiz gelöscht',5000,{label:'Rückgängig',fn:()=>{clearTimeout(t);S.notizen.splice(i,0,n);save();render()}});break}
     case'voice':sprachStart(b);break;
     case'bon':closeSheet(true);bonWaehlen();break;
     case'bon-abbruch':BON.id=null;clearInterval(BON.t);closeSheet();break;
@@ -1986,6 +2274,7 @@ document.addEventListener('submit',async e=>{
 document.addEventListener('input',e=>{
   if(e.target.id==='addName'){suggQ=e.target.value;showSugg()}
   if(e.target.id==='rezeptTxt'){const v=$('#rezeptVor');if(v){const z=rezeptZeilen(e.target.value);v.innerHTML=z.map(n=>`<span class="chip" style="cursor:default">${esc(n)}</span>`).join('')}}
+  if(e.target.id==='notizQ'){notizQ=e.target.value;const el=$('#notizList');if(el){const q=wortListe(notizQ);el.innerHTML=S.notizen.filter(n=>!q.length||q.every(w=>norm((n.titel||'')+' '+(n.text||'')).includes(w))).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.geaendert||0)-(a.geaendert||0)).map(notizKarte).join('');bilderEinsetzen(el)}}
   if(e.target.id==='prospQ'){PR.q=e.target.value;PR.limit=60;clearTimeout(PR.qT);PR.qT=setTimeout(()=>{const el=$('#prospList');if(el)el.innerHTML=prospListe(aktProspLaden())},120)}
   if(e.target.id==='patOp'){S.settings.patOp=+e.target.value;save();applyTheme()}
   if(e.target.id==='accentPick'){S.settings.accent=e.target.value;save();applyTheme()}
