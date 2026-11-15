@@ -530,6 +530,7 @@ nav.tabs{isolation:isolate}
 .pb-btn{background:#0046aa!important;color:#fff!important;text-decoration:none}
 .pb-tag{margin-left:6px;font-size:10px;font-weight:900;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:#0046aa;color:#fff;text-transform:none}
 .pk-sort{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.pk-sort span{font-size:12px;font-weight:800;color:var(--muted);margin-right:2px}
+.pk-pdf{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pk-pdf>span{font-size:28px}.pk-pdf .grow{flex:1;min-width:150px}.pk-pdf small{display:block;font-size:12px}
 </style>
 </head>
 <body>
@@ -546,7 +547,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='2.10';
-const BUILD='2026-11-15-1840'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-15-1945'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d']};
@@ -571,7 +572,8 @@ const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=pa
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
   {v:'2.10',d:'15.11.2026',t:'Orterer ist dabei',items:[
-    ['Neu','Orterer Getränkemarkt ist jetzt ein eigener Laden: auf der Einkaufsliste, im Einkaufsmodus und in der Standort-Erkennung, zum Beispiel in Allershausen.']]},
+    ['Neu','Orterer Getränkemarkt ist jetzt ein eigener Laden: auf der Einkaufsliste, im Einkaufsmodus und in der Standort-Erkennung, zum Beispiel in Allershausen.'],
+    ['Neu','Die Angebote aus dem Orterer-Prospekt stehen unter Angebote, dazu der ganze Prospekt zum Durchblättern.']]},
   {v:'2.9.1',d:'15.11.2026',t:'Fehlerbehebungen',items:[
     ['Behoben','Die Prospekt-Angebote waren durcheinander sortiert. Jetzt nach Kategorie wie im Laden, wahlweise nach Rabatt oder Preis.'],
     ['Behoben','In der Merkliste stehen die passendsten und günstigsten Angebote jetzt oben.']]},
@@ -1895,7 +1897,7 @@ function prospKarte(o,mk,l){
   const btn=m&&m.direkt?`<button class="pk-add on" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="Von der Einkaufsliste nehmen">${ic('tick')}</button>`
     :`<button class="pk-add" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="${esc(prospTitel(o))} auf die Einkaufsliste">${ic('plus')}</button>`;
   return `<div class="pk${m?' mine '+m.art:''}">
-    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">🏷️</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}<button class="pk-share" data-act="share-offer" data-l="${l}" data-i="${o.i}" aria-label="Angebot teilen">${ic('share')}</button></div>
+    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">${katGruppe(o)==='getraenke'?'🍾':'🏷️'}</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}<button class="pk-share" data-act="share-offer" data-l="${l}" data-i="${o.i}" aria-label="Angebot teilen">${ic('share')}</button></div>
     ${markHtml}
     <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
     <div class="pk-f"><div class="pk-p">${o.p?`<b>${eur(o.p)}</b>`:`<b class="pk-r">${esc(o.r||'Angebot')}</b>`}${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.p&&o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
@@ -1946,9 +1948,9 @@ function vProspekte(){
   const zeitSeg=a.bald.length?`<div class="seg pk-seg"><button data-act="set-pzeit" data-v="jetzt" aria-pressed="${a.zeit==='jetzt'}">Diese Woche · ${a.jetzt.length}</button><button data-act="set-pzeit" data-v="bald" aria-pressed="${a.zeit==='bald'}">Demnächst · ${a.bald.length}</button></div>`:'';
   const katChips=`<div class="chips" role="group" aria-label="Kategorie"><button class="chip" data-act="set-pkat" data-v="alle" aria-pressed="${a.kat==='alle'}">Alles</button>${KAT_GRUPPEN.filter(([id])=>a.kats[id]).map(([id,name])=>`<button class="chip" data-act="set-pkat" data-v="${id}" aria-pressed="${a.kat===id}">${esc(name)}<span class="cnt">${a.kats[id]}</span></button>`).join('')}</div>`;
   return chips+banner+`<div class="card pk-tools">
-      <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. Käse" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
+      <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. ${l==='orterer'?'Bier':l==='dm'||l==='rossmann'?'Shampoo':'Käse'}" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
       ${zeitSeg}${katChips}<div class="pk-sort" role="group" aria-label="Sortieren"><span>Sortieren:</span>${SORT_ARTEN.filter(([k])=>k!=='rabatt'||(PR.laden[l]||[]).some(o=>rabattVon(o)>0)).map(([k,n])=>`<button class="chip" data-act="set-psort" data-v="${k}" aria-pressed="${(S.settings.prospSort||'kat')===k}">${n}</button>`).join('')}</div></div>
-    ${info.quelle?`<p class="note" style="margin:0 4px">${info.quelle==='auszug'?`${esc(lname(l))} zeigt online nur einen Auszug aus dem Prospekt, meist Rabatt-Aktionen.`:`Angebote vom Markt ${esc(info.quelle)}, dem nächsten bei Freising.`}</p>`:''}${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
+    ${info.pdfs&&info.pdfs.length?`<div class="card pad pk-pdf"><span>🍺</span><div class="grow"><b>Orterer-Prospekt</b><small class="muted">${info.pdfs.map(x=>`${fmtDate(x.von,{day:'numeric',month:'numeric'})} – ${fmtDate(x.bis,{day:'numeric',month:'numeric'})}`).join(' · ')} · gilt in allen Orterer-Märkten, z. B. Allershausen</small></div>${info.pdfs.map((x,i)=>`<a class="btn ghost sm" href="${esc(x.url)}" target="_blank" rel="noopener">${info.pdfs.length>1?'Prospekt '+(i+1):'Ganzer Prospekt'}</a>`).join('')}</div>`:''}${info.quelle&&!info.pdfs?`<p class="note" style="margin:0 4px">${info.quelle==='auszug'?`${esc(lname(l))} zeigt online nur einen Auszug aus dem Prospekt, meist Rabatt-Aktionen.`:`Angebote vom Markt ${esc(info.quelle)}, dem nächsten bei Freising.`}</p>`:''}${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
     ${idx.stand?`<p class="note" style="text-align:center">Stand ${fmtDT(idx.stand)} · Quelle: Prospekte für ${esc(idx.plz||'85354')}</p>`:''}`;
 }
 function vAngebote(){
