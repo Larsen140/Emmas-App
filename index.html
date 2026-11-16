@@ -539,6 +539,9 @@ nav.tabs{isolation:isolate}
 .app-tag{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;background:#ffe27a;color:#4a3500;margin:2px 4px 0 0}
 .app-tag.muss{background:#ff9f43;color:#3a1c00}.app-tag.online{background:#cfd8e6;color:#22324a}
 .pk-ohneapp{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:700;cursor:pointer}.pk-ohneapp input{width:18px;height:18px;margin-top:1px;flex:none;accent-color:var(--accent)}
+.thumb{flex:none;width:46px;height:46px;border-radius:12px;background:#fff;overflow:hidden;display:grid;place-items:center;box-shadow:inset 0 0 0 1px var(--line)}
+.thumb img{width:100%;height:100%;object-fit:contain;padding:3px;box-sizing:border-box;opacity:0;transition:opacity .3s}.thumb img.da{opacity:1}
+.shop-row .thumb{width:54px;height:54px}
 </style>
 </head>
 <body>
@@ -554,8 +557,8 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.10.1';
-const BUILD='2026-11-16-1130'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.11';
+const BUILD='2026-11-16-1345'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d']};
@@ -579,6 +582,9 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.11',d:'16.11.2026',t:'Produktbilder überall',items:[
+    ['Neu','Orterer-Angebote haben jetzt Produktbilder, direkt aus dem Prospekt.'],
+    ['Neu','Auf der Einkaufsliste, im Einkaufsmodus und in der Merkliste siehst du jetzt kleine Produktbilder.']]},
   {v:'2.10.1',d:'15.11.2026',t:'App-Hinweise bei Angeboten',items:[
     ['Besser','Angebote, die nur mit einer App gelten (Lidl Plus, EDEKA-App, REWE Bonus, HIT-App, Rossmann-App), sind jetzt deutlich markiert, mit App-Preis.'],
     ['Besser','Angebote, die es nur online gibt, sind ebenfalls markiert. Beides lässt sich mit einem Haken ausblenden.']]},
@@ -1108,6 +1114,7 @@ function render(){
   try{v.innerHTML={einkauf:vEinkauf,angebote:vAngebote,termine:vTermine,todos:vTodos,notizen:vNotizen,updates:vUpdates,einstellungen:vSettings}[tab]()}
   catch(e){console.error(e);v.innerHTML=`<div class="card empty"><b>Hoppla</b>Da ist etwas schiefgelaufen. Lade die App neu.</div>`}
   $('#main').scrollTop=y;
+  setTimeout(()=>bilderEinsetzen($('#view')),0);
   clearTimeout(render.abzT);render.abzT=setTimeout(abzeichenPruefen,700);
   if(enterAnim&&!REDUCE){v.classList.remove('enter');void v.offsetWidth;v.classList.add('enter');clearTimeout(render.t);render.t=setTimeout(()=>v.classList.remove('enter'),900)}
   enterAnim=false;
@@ -1342,7 +1349,7 @@ function vShop(){
   const gr={};for(const it of offen){const g=gangVon(it);(gr[g]=gr[g]||[]).push(it)}
   const sum=arr=>arr.reduce((s_,it)=>s_+(effPrice({...it,laden:it.laden||l}).preis||0)*qty(it),0);
   const row=it=>{const p=effPrice({...it,laden:it.laden||l}),q=qty(it);return `<div class="shop-row ${it.done?'done':''}">
-    <button class="check big ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
+    <button class="check big ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>${itemBild(it,effPrice({...it,laden:it.laden||l}))}
     <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>${p.titel&&norm(p.titel)!==norm(it.name)?`<div class="m">${esc(p.titel)}</div>`:''}${it.notiz?`<div class="m">${esc(it.notiz)}</div>`:''}${it.wahl&&appText(it.wahl)&&!(it.notiz||'').includes(appText(it.wahl))?`<div class="m">${appTag(it.wahl)}</div>`:''}</div>
     <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal?'<span class="tag deal">Angebot</span>':''}`:''}</div></div>`};
   const pct=items.length?Math.round(fertig.length/items.length*100):0;
@@ -1580,6 +1587,9 @@ function paybackOptionen(){
     <p class="note">So erinnert dich die App:<br>• Mitteilung einmal pro Woche: Coupons in der Payback-App aktivieren<br>• Mitteilung, wenn ein eingetragener Payback-Coupon morgen abläuft<br>• Im Einkaufsmodus bei dm und Edeka: „Payback nicht vergessen!“ mit deinen Coupons${S.push&&S.push.on?'':'<br><b>Für die Mitteilungen müssen die Benachrichtigungen oben eingeschaltet sein.</b>'}</p>`:''}</div>`;
 }
 
+function itemBild(it,p){const w=it.wahl||{};const repo=w.bildRepo,u=w.bild||(p&&p.deal&&p.deal.bild)||'';
+  if(repo)return `<span class="thumb"><img data-bild="${esc(repo)}" alt=""></span>`;
+  return u?`<span class="thumb"><img src="${esc(u)}" alt="" loading="lazy" onload="this.classList.add('da')" onerror="this.parentNode.remove()"></span>`:''}
 /* ===== App-Pflicht bei Angeboten ===== */
 function appText(o){const a=o&&o.app;if(!a&&!(o&&o.online))return '';if(!a)return 'Nur online erhältlich';
   if(a.nurApp)return `Preis nur mit ${a.n}${a.normal?` · ohne App ${eur(a.normal)}`:''}`;
@@ -1731,7 +1741,7 @@ function vEinkauf(){
   Object.keys(groups).forEach(k=>{if(!order.includes(k))order.push(k)});
   const row=it=>{const p=effPrice(it),q=qty(it);return `<div class="sw"><div class="sw-bg" aria-hidden="true"><span class="l">✓ ${it.done?'Zurück':'Im Wagen'}</span><span class="r">Löschen</span></div><div class="row ${it.done?'done':''}" data-swipe="item" data-id="${it.id}">
     <button class="check ${it.done?'on':''}" data-act="toggle-item" data-id="${it.id}" aria-label="${esc(it.name)} ${it.done?'nicht ':''}abhaken">${ic('ok')}</button>
-    <div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
+    ${itemBild(it,p)}<div class="body" data-act="edit-item" data-id="${it.id}"><div class="t">${q>1?`<span class="muted">${q}×</span> `:''}${esc(it.name)}</div>
       <div class="m">${p.titel&&norm(p.titel)!==norm(it.name)?`<span>${esc(p.titel)}</span>`:''}${it.notiz?`<span>${esc(it.notiz)}</span>`:''}${it.wahl&&!(it.notiz||'').includes(appText(it.wahl)||'§')?appTag(it.wahl):''}${p.deal?`<span class="tag deal">Angebot${p.deal.bis?' bis '+fmtDate(p.deal.bis):''}</span>`:''}${p.bei?`<span class="tag acc">am günstigsten bei ${esc(lname(p.bei))}</span>`:''}${p.est?`<span class="tag">${it.laden?'ungefähr':'Laden wählen für genauen Preis'}</span>`:''}${p.ki===true?'<span class="tag acc">KI-Preis</span>':''}${it.laden&&sel==='alle'&&it.done?`<span>${esc(lname(it.laden))}</span>`:''}</div></div>
     <div class="price">${p.preis!=null?`<b class="${p.deal?'deal':''}">${p.est?'ca. ':''}${eur(p.preis*q)}</b>${p.deal&&p.normal!=null&&p.normal>p.preis?`<s>${eur(p.normal*q)}</s>`:''}`:(pending(it)&&!it.done?`<span class="muted small" style="display:inline-flex;gap:6px;align-items:center"><span class="spin"></span>sucht…</span>`:`<span class="muted small">kein Preis</span>`)}</div></div></div>`};
   const sum=arr=>arr.reduce((s,it)=>{const p=effPrice(it);return s+(p.preis||0)*qty(it)},0);
@@ -1796,7 +1806,7 @@ function showSugg(){
   box.innerHTML=list.map((s,i)=>`<button type="button" data-act="pick-sugg" data-i="${i}"><i class="dot" style="background:${s.laden?lcol(s.laden):'var(--muted)'}"></i><span class="nm">${esc(s.name)}<br><small>${esc(s.laden?lname(s.laden):'Ohne Laden')}${s.offer?` · Angebot${s.bis?' bis '+fmtDate(s.bis):''}`:s.normal?' · Normalpreis':' · früher gekauft'}</small></span>${s.preis!=null?`<span class="pr" style="${s.offer?'':'color:var(--text)'}">${eur(s.preis)}</span>`:''}</button>`).join('');
   box._list=list;
 }
-function wahlVon(o){return {app:o.app||null,online:!!o.online,laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki,info:o.info||'',grundpreis:o.grundpreis||null,einheit:o.einheit||''}}
+function wahlVon(o){return {bild:o.bild||'',app:o.app||null,online:!!o.online,laden:o.laden,titel:o.titel,preis:o.preis,alterPreis:o.alterPreis||null,bis:o.bis||null,normal:!!o.normal,ki:!!o.ki,info:o.info||'',grundpreis:o.grundpreis||null,einheit:o.einheit||''}}
 function addItem(name,laden,extra={}){
   name=name.trim();if(!name)return;
   const it={id:uid(),name,produkt:(extra.produkt||name),menge:1,laden:laden||'',preis:null,angebotPreis:null,angebotBis:null,wahl:null,notiz:'',done:false,added:Date.now(),...extra};
@@ -1923,7 +1933,7 @@ function prospKarte(o,mk,l){
   const btn=m&&m.direkt?`<button class="pk-add on" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="Von der Einkaufsliste nehmen">${ic('tick')}</button>`
     :`<button class="pk-add" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="${esc(prospTitel(o))} auf die Einkaufsliste">${ic('plus')}</button>`;
   return `<div class="pk${m?' mine '+m.art:''}">
-    <div class="pk-img">${img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">${katGruppe(o)==='getraenke'?'🍾':'🏷️'}</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}<button class="pk-share" data-act="share-offer" data-l="${l}" data-i="${o.i}" aria-label="Angebot teilen">${ic('share')}</button></div>
+    <div class="pk-img">${o.bild?`<img data-bild="${esc(o.bild)}" alt="" decoding="async">`:img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">${katGruppe(o)==='getraenke'?'🍾':'🏷️'}</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}<button class="pk-share" data-act="share-offer" data-l="${l}" data-i="${o.i}" aria-label="Angebot teilen">${ic('share')}</button></div>
     ${markHtml}
     ${appText(o)?`<div class="pk-app${!o.app?' online':appPflicht(o)?' muss':''}">${o.app?'📱':'🌐'} ${esc(appText(o))}</div>`:''}
     <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
@@ -1956,7 +1966,7 @@ function prospListe(l){
       :`<div class="card empty" style="padding:22px"><b style="font-size:16px">Nichts gefunden</b>${PR.q?'Versuch ein anderes Wort.':''}</div>`}`;
 }
 function aktProspLaden(){const ls=S.settings.laeden;let l=S.settings.prospLaden;if(!ls.includes(l))l=ls.find(k=>!(PR.index?.laeden?.[k]?.fehlt))||ls[0];return l}
-function prospNeu(l){const el=$('#prospList');if(el&&tab==='angebote'){const y=$('#main').scrollTop;el.innerHTML=prospListe(l);$('#main').scrollTop=y}else render()}
+function prospNeu(l){const el=$('#prospList');if(el&&tab==='angebote'){const y=$('#main').scrollTop;el.innerHTML=prospListe(l);$('#main').scrollTop=y;bilderEinsetzen(el)}else render()}
 function vProspekte(){
   if(!GH.on)return `<div class="card empty"><div class="em">🔗</div><b>Noch nicht verbunden</b>Gib einmal deinen Zugangscode in den Optionen ein, dann siehst du hier alle Angebote aus den Prospekten.<div style="margin-top:14px"><button class="btn" data-tab="einstellungen">Zu den Optionen</button></div></div>`;
   prospIndex();
@@ -2008,11 +2018,11 @@ function vMerk(seg){
     body=a.produkte.map(p=>{
       const offs=(p.angebote||[]).filter(o=>!o.unpassend&&(!o.bis||o.bis>=t)&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden)).sort((x,y)=>(x.exakt?-1:0)-(y.exakt?-1:0)||(x.rang??1)-(y.rang??1)||x.preis-y.preis);
       return `<div class="card list"><div class="prod-h"><h3>${esc(p.name)}</h3>${offs.length?`<span class="tag deal">${offs.length} ${offs.length===1?'Angebot':'Angebote'}</span>`:''}</div>
-      ${offs.length?offs.map(o=>{const off=o.alterPreis?Math.round((1-o.preis/o.alterPreis)*100):0;return `<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div>${appTag(o)}<div class="m">${esc(lname(o.laden))}${o.marke&&!norm(o.titel).includes(norm(o.marke))?' · '+esc(o.marke):''}${o.bis?' · bis '+fmtDate(o.bis,{weekday:'short',day:'numeric',month:'short'}):''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div>${off>0?`<span class="tag deal" style="margin-top:4px;display:inline-block">−${off} %</span>`:''}</div>
+      ${offs.length?offs.map(o=>{const off=o.alterPreis?Math.round((1-o.preis/o.alterPreis)*100):0;return `<div class="offer">${o.bild?`<span class="thumb"><img src="${esc(o.bild)}" alt="" loading="lazy" onload="this.classList.add('da')" onerror="this.parentNode.remove()"></span>`:''}<i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div>${appTag(o)}<div class="m">${esc(lname(o.laden))}${o.marke&&!norm(o.titel).includes(norm(o.marke))?' · '+esc(o.marke):''}${o.bis?' · bis '+fmtDate(o.bis,{weekday:'short',day:'numeric',month:'short'}):''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div>${off>0?`<span class="tag deal" style="margin-top:4px;display:inline-block">−${off} %</span>`:''}</div>
         <div class="pr"><b>${eur(o.preis)}</b>${o.alterPreis?`<s>${eur(o.alterPreis)}</s>`:''}</div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="a" data-i="${p.angebote.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`}).join('')
       :`<div class="offer"><div class="body"><div class="m">Diese Woche kein Angebot${sel!=='alle'?' bei '+esc(lname(sel)):''}.</div></div></div>`}
-      ${(()=>{const np=(p.normalpreise||[]).filter(o=>!o.unpassend&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden)).sort((x,y)=>(x.exakt?-1:0)-(y.exakt?-1:0)||(x.rang??1)-(y.rang??1)||x.preis-y.preis);return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer"><i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.ki?` · <a href="${esc(o.quelle)}" target="_blank" rel="noopener" style="color:inherit">KI-Preis${o.info?' · '+esc(o.info):''} ↗</a>`:''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
+      ${(()=>{const np=(p.normalpreise||[]).filter(o=>!o.unpassend&&(sel==='alle'||o.laden===sel)&&S.settings.laeden.includes(o.laden)).sort((x,y)=>(x.exakt?-1:0)-(y.exakt?-1:0)||(x.rang??1)-(y.rang??1)||x.preis-y.preis);return np.length?`<div class="group-h">Normalpreise</div>${np.map(o=>`<div class="offer">${o.bild?`<span class="thumb"><img src="${esc(o.bild)}" alt="" loading="lazy" onload="this.classList.add('da')" onerror="this.parentNode.remove()"></span>`:''}<i class="dot" style="background:${lcol(o.laden)}"></i><div class="body"><div class="t">${esc(o.titel)}</div><div class="m">${esc(lname(o.laden))}${o.ki?` · <a href="${esc(o.quelle)}" target="_blank" rel="noopener" style="color:inherit">KI-Preis${o.info?' · '+esc(o.info):''} ↗</a>`:''}${o.grundpreis?` · ${eur(o.grundpreis)}/${esc(o.einheit||'Einheit')}`:''}</div></div>
         <div class="pr"><b style="color:var(--text)">${eur(o.preis)}</b></div>
         <button class="icon-btn" data-act="offer-to-list" data-p="${esc(p.name)}" data-k="n" data-i="${p.normalpreise.indexOf(o)}" aria-label="Auf die Einkaufsliste">${ic('cart')}</button></div>`).join('')}`:''})()}</div>`}).join('');
   }
@@ -2285,11 +2295,11 @@ document.addEventListener('click',async e=>{
     case'set-pzeit':S.settings.prospZeit=b.dataset.v;S.settings.prospZeitTag=todayIso();PR.limit=60;save();render();break;
     case'set-psort':S.settings.prospSort=b.dataset.v;PR.limit=60;save();render();break;
     case'set-pkat':S.settings.prospKat=b.dataset.v;PR.limit=60;save();render();break;
-    case'prosp-more':PR.limit+=90;{const el=$('#prospList');if(el)el.innerHTML=prospListe(aktProspLaden())}break;
+    case'prosp-more':PR.limit+=90;{const el=$('#prospList');if(el){el.innerHTML=prospListe(aktProspLaden());bilderEinsetzen(el)}}break;
     case'prosp-retry':PR.fehler=null;PR.index=null;PR.laden={};prospIndex();render();break;
     case'prosp-add':{const l=b.dataset.l,o=(PR.laden[l]||[]).find(x=>String(x.i)===b.dataset.i);if(!o)break;
       const m=prospMarken()(o),titel=prospTitel(o);
-      const wahl=!o.p?null:{app:o.app||null,online:!!o.online,laden:l,titel,preis:o.p,alterPreis:o.a&&o.a>o.p?o.a:null,bis:o.b||null,normal:false,ki:false,info:o.d&&o.d!=='Details im Prospekt'?o.d:'',grundpreis:o.g||null,einheit:o.e||''};
+      const wahl=!o.p?null:{bild:o.bild?'':prospImg(o),bildRepo:o.bild||'',app:o.app||null,online:!!o.online,laden:l,titel,preis:o.p,alterPreis:o.a&&o.a>o.p?o.a:null,bis:o.b||null,normal:false,ki:false,info:o.d&&o.d!=='Details im Prospekt'?o.d:'',grundpreis:o.g||null,einheit:o.e||''};
       if(m&&m.direkt){const it=m.it,i=S.einkauf.indexOf(it);S.einkauf.splice(i,1);save();prospNeu(l);
         toast(`${titel} ist wieder von der Liste`,4000,{label:'Rückgängig',fn:()=>{S.einkauf.splice(i,0,it);save();prospNeu(l)}});break}
       if(m&&m.art==='liste'){const it=m.it,alt={laden:it.laden,wahl:it.wahl,prospekt:it.prospekt};it.laden=l;it.wahl=wahl;it.prospekt=o.i;save();prospNeu(l);
@@ -2366,7 +2376,7 @@ document.addEventListener('input',e=>{
   if(e.target.id==='addName'){suggQ=e.target.value;showSugg()}
   if(e.target.id==='rezeptTxt'){const v=$('#rezeptVor');if(v){const z=rezeptZeilen(e.target.value);v.innerHTML=z.map(n=>`<span class="chip" style="cursor:default">${esc(n)}</span>`).join('')}}
   if(e.target.id==='notizQ'){notizQ=e.target.value;const el=$('#notizList');if(el){const q=wortListe(notizQ);el.innerHTML=S.notizen.filter(n=>!q.length||q.every(w=>norm((n.titel||'')+' '+(n.text||'')).includes(w))).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.geaendert||0)-(a.geaendert||0)).map(notizKarte).join('');bilderEinsetzen(el)}}
-  if(e.target.id==='prospQ'){PR.q=e.target.value;PR.limit=60;clearTimeout(PR.qT);PR.qT=setTimeout(()=>{const el=$('#prospList');if(el)el.innerHTML=prospListe(aktProspLaden())},120)}
+  if(e.target.id==='prospQ'){PR.q=e.target.value;PR.limit=60;clearTimeout(PR.qT);PR.qT=setTimeout(()=>{const el=$('#prospList');if(el){el.innerHTML=prospListe(aktProspLaden());bilderEinsetzen(el)}},120)}
   if(e.target.id==='patOp'){S.settings.patOp=+e.target.value;save();applyTheme()}
   if(e.target.id==='accentPick'){S.settings.accent=e.target.value;save();applyTheme()}
   if(e.target.id==='bgPick'){S.settings.bg=e.target.value;save();applyTheme()}
