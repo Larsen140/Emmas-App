@@ -555,7 +555,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='2.10.1';
-const BUILD='2026-11-15-2030'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-16-1130'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d']};
@@ -1917,7 +1917,7 @@ function prospAuswahl(l){
 }
 function prospKarte(o,mk,l){
   const off=o.p&&o.a&&o.a>o.p?Math.round((1-o.p/o.a)*100):0,img=prospImg(o),t=todayIso();
-  const wann=o.v&&o.v>t?`ab ${fmtDate(o.v,{weekday:'short',day:'numeric',month:'numeric'})}`:o.b?`bis ${fmtDate(o.b,{weekday:'short',day:'numeric',month:'numeric'})}`:'';
+  const wann=o.dauer?'Dauerpreis':o.v&&o.v>t?`ab ${fmtDate(o.v,{weekday:'short',day:'numeric',month:'numeric'})}`:o.b?`bis ${fmtDate(o.b,{weekday:'short',day:'numeric',month:'numeric'})}`:'';
   const m=mk(o);
   const markHtml=m?(m.art==='liste'?`<div class="pk-mark">${ic('tick')}Auf deiner Liste</div>`:m.art==='wunsch'?`<div class="pk-mark wunsch">♥ Auf deiner Wunschliste</div>`:`<div class="pk-mark merk">♡ Auf deiner Merkliste</div>`):'';
   const btn=m&&m.direkt?`<button class="pk-add on" data-act="prosp-add" data-l="${l}" data-i="${o.i}" aria-label="Von der Einkaufsliste nehmen">${ic('tick')}</button>`
