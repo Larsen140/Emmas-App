@@ -557,11 +557,11 @@ nav.tabs{isolation:isolate}
 <script>
 'use strict';
 /* ---------- Grundlagen ---------- */
-const VERSION='2.11';
-const BUILD='2026-11-16-1345'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const VERSION='2.12';
+const BUILD='2026-11-18-1640'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
-const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d']};
+const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d'],netto:['Netto','#f5c400']};
 const THEMES={
   latte:{name:'Latte',bg:'#f6efe4',surface:'#fffaf3',text:'#3b2a1e',accent:'#a8754f',soft:'#ead7bd'},
   rose:{name:'Rosé',bg:'#f8ece9',surface:'#fff8f6',text:'#3d2327',accent:'#c06b7a',soft:'#f2cdd2'},
@@ -582,6 +582,8 @@ const GLOWS={aus:'Aus',sanft:'Sanft',akzent:'Akzent',sonne:'Sonnenuntergang',pas
 const lum=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return 1;const n=parseInt(m[1],16),f=c=>{c/=255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)};return .2126*f(n>>16&255)+.7152*f(n>>8&255)+.0722*f(n&255)};
 const EV_COLORS=['#a8754f','#c06b7a','#6a8c66','#8770b4','#c38419','#4f86b0'];
 const UPDATES=[
+  {v:'2.12',d:'18.11.2026',t:'Netto ist dabei',items:[
+    ['Neu','Netto Marken-Discount ist jetzt ein eigener Laden: alle Prospekt-Angebote der Filiale in Großhadern, auf der Einkaufsliste, im Einkaufsmodus, in der Standort-Erkennung und mit Payback-Erinnerung.']]},
   {v:'2.11',d:'16.11.2026',t:'Produktbilder überall',items:[
     ['Neu','Orterer-Angebote haben jetzt Produktbilder, direkt aus dem Prospekt.'],
     ['Neu','Auf der Einkaufsliste, im Einkaufsmodus und in der Merkliste siehst du jetzt kleine Produktbilder.']]},
@@ -745,7 +747,7 @@ const DEF={einkauf:[],preise:{},verlauf:[],todos:[],termine:[],notizen:[],coupon
   merkliste:null,angebote:null,seen:null,welcome:false};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){S={}}
-S=Object.assign({},DEF,{haeufig:{}},S);if(!Array.isArray(S.notizen))S.notizen=[];if(!Array.isArray(S.coupons))S.coupons=[];if(!S.deviceId)S.deviceId=uid()+uid();S.settings=Object.assign({},DEF.settings,S.settings||{});if(!S.settings.mitOrterer){S.settings.mitOrterer=true;if(Array.isArray(S.settings.laeden)&&!S.settings.laeden.includes('orterer'))S.settings.laeden.push('orterer')}S.settings.repo=DEFAULT_REPO;
+S=Object.assign({},DEF,{haeufig:{}},S);if(!Array.isArray(S.notizen))S.notizen=[];if(!Array.isArray(S.coupons))S.coupons=[];if(!S.deviceId)S.deviceId=uid()+uid();S.settings=Object.assign({},DEF.settings,S.settings||{});if(!S.settings.mitNetto){S.settings.mitNetto=true;if(Array.isArray(S.settings.laeden)&&!S.settings.laeden.includes('netto'))S.settings.laeden.push('netto')}if(!S.settings.mitOrterer){S.settings.mitOrterer=true;if(Array.isArray(S.settings.laeden)&&!S.settings.laeden.includes('orterer'))S.settings.laeden.push('orterer')}S.settings.repo=DEFAULT_REPO;
 let saveT;
 function save(){clearTimeout(saveT);try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Speichern nicht möglich (Speicher voll?)')}if(typeof syncPlan==='function')syncPlan()}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
@@ -1569,7 +1571,7 @@ function wetterHtml(){
 }
 
 /* ===== Payback ===== */
-const PAYBACK_LAEDEN=['dm','edeka'];
+const PAYBACK_LAEDEN=['dm','edeka','netto'];
 const WTAGE=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
 function paybackLaden(l){return S.settings.payback!==false&&PAYBACK_LAEDEN.includes(l)}
 function paybackCoupons(){return (S.coupons||[]).filter(c=>couponOk(c)&&(c.app||'')==='Payback')}
@@ -1584,7 +1586,7 @@ function paybackOptionen(){
   return `<div class="card pad sec"><h3><span class="pb-logo sm">P</span> Payback-Erinnerung</h3>
     <label class="herz-opt"><input type="checkbox" data-act="toggle-payback" ${st.payback!==false?'checked':''}><span>Erinnerungen an Payback</span></label>
     ${st.payback!==false?`<div class="field"><label for="pbTag">Coupons aktivieren – Erinnerung jeden</label><select id="pbTag" data-change="pb-tag">${WTAGE.map((t,i)=>`<option value="${i}" ${+st.paybackTag===i?'selected':''}>${t}</option>`).join('')}</select></div>
-    <p class="note">So erinnert dich die App:<br>• Mitteilung einmal pro Woche: Coupons in der Payback-App aktivieren<br>• Mitteilung, wenn ein eingetragener Payback-Coupon morgen abläuft<br>• Im Einkaufsmodus bei dm und Edeka: „Payback nicht vergessen!“ mit deinen Coupons${S.push&&S.push.on?'':'<br><b>Für die Mitteilungen müssen die Benachrichtigungen oben eingeschaltet sein.</b>'}</p>`:''}</div>`;
+    <p class="note">So erinnert dich die App:<br>• Mitteilung einmal pro Woche: Coupons in der Payback-App aktivieren<br>• Mitteilung, wenn ein eingetragener Payback-Coupon morgen abläuft<br>• Im Einkaufsmodus bei dm, Edeka und Netto: „Payback nicht vergessen!“ mit deinen Coupons${S.push&&S.push.on?'':'<br><b>Für die Mitteilungen müssen die Benachrichtigungen oben eingeschaltet sein.</b>'}</p>`:''}</div>`;
 }
 
 function itemBild(it,p){const w=it.wahl||{};const repo=w.bildRepo,u=w.bild||(p&&p.deal&&p.deal.bild)||'';
@@ -1987,7 +1989,7 @@ function vProspekte(){
   return chips+banner+`<div class="card pk-tools">
       <label class="pk-search">${ic('search')}<input id="prospQ" type="search" value="${esc(PR.q)}" placeholder="In ${esc(lname(l))} suchen, z. B. ${l==='orterer'?'Bier':l==='dm'||l==='rossmann'?'Shampoo':'Käse'}" enterkeyhint="search" autocomplete="off" aria-label="Angebote durchsuchen"></label>
       ${zeitSeg}${katChips}${(PR.laden[l]||[]).some(appPflicht)?`<label class="pk-ohneapp"><input type="checkbox" data-act="toggle-ohneapp" ${S.settings.ohneApp?'checked':''}><span>📱 Angebote ausblenden, die nur mit App oder online gelten (${(PR.laden[l]||[]).filter(appPflicht).length})</span></label>`:''}<div class="pk-sort" role="group" aria-label="Sortieren"><span>Sortieren:</span>${SORT_ARTEN.filter(([k])=>k!=='rabatt'||(PR.laden[l]||[]).some(o=>rabattVon(o)>0)).map(([k,n])=>`<button class="chip" data-act="set-psort" data-v="${k}" aria-pressed="${(S.settings.prospSort||'kat')===k}">${n}</button>`).join('')}</div></div>
-    ${info.pdfs&&info.pdfs.length?`<div class="card pad pk-pdf"><span>🍺</span><div class="grow"><b>Orterer-Prospekt</b><small class="muted">${info.pdfs.map(x=>`${fmtDate(x.von,{day:'numeric',month:'numeric'})} – ${fmtDate(x.bis,{day:'numeric',month:'numeric'})}`).join(' · ')} · gilt in allen Orterer-Märkten, z. B. Allershausen</small></div>${info.pdfs.map((x,i)=>`<a class="btn ghost sm" href="${esc(x.url)}" target="_blank" rel="noopener">${info.pdfs.length>1?'Prospekt '+(i+1):'Ganzer Prospekt'}</a>`).join('')}</div>`:''}${info.quelle&&!info.pdfs?`<p class="note" style="margin:0 4px">${info.quelle==='auszug'?`${esc(lname(l))} zeigt online nur einen Auszug aus dem Prospekt, meist Rabatt-Aktionen.`:`Angebote vom Markt ${esc(info.quelle)}, dem nächsten bei Freising.`}</p>`:''}${info.ersatz?`<p class="note" style="margin:0 4px">In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.</p>`:''}<div id="prospList">${prospListe(l)}</div>
+    ${info.pdfs&&info.pdfs.length?`<div class="card pad pk-pdf"><span>🍺</span><div class="grow"><b>Orterer-Prospekt</b><small class="muted">${info.pdfs.map(x=>`${fmtDate(x.von,{day:'numeric',month:'numeric'})} – ${fmtDate(x.bis,{day:'numeric',month:'numeric'})}`).join(' · ')} · gilt in allen Orterer-Märkten, z. B. Allershausen</small></div>${info.pdfs.map((x,i)=>`<a class="btn ghost sm" href="${esc(x.url)}" target="_blank" rel="noopener">${info.pdfs.length>1?'Prospekt '+(i+1):'Ganzer Prospekt'}</a>`).join('')}</div>`:''}${info.quelle&&!info.pdfs?`<p class="note" style="margin:0 4px">${info.quelle==='auszug'?`${esc(lname(l))} zeigt online nur einen Auszug aus dem Prospekt, meist Rabatt-Aktionen.`:`Angebote vom Markt ${esc(info.quelle)}, dem nächsten bei Freising.`}</p>`:''}${info.ersatz?`<p class="note" style="margin:0 4px">${/Gro/.test(info.ersatz)?`Angebote der Filiale in ${esc(info.ersatz)}.`:`In Freising gibt es von ${esc(lname(l))} keinen Prospekt, das hier sind die Angebote aus ${esc(info.ersatz)}.`}</p>`:''}<div id="prospList">${prospListe(l)}</div>
     ${idx.stand?`<p class="note" style="text-align:center">Stand ${fmtDT(idx.stand)} · Quelle: Prospekte für ${esc(idx.plz||'85354')}</p>`:''}`;
 }
 function vAngebote(){
