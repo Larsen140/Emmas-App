@@ -1,4 +1,5 @@
-# Erinnerungen an Termine und To-dos und Mitteilung bei neuen Updates.
+# Erinnerungen an Termine und To-dos, Mitteilung bei neuen Updates
+# und das tägliche Anstoßen der Angebote (Prospekte jeden Tag, Merkliste montags).
 # Läuft hier im öffentlichen Repo, weil GitHub-Läufe hier kostenlos sind – deshalb alle 5 Minuten.
 # Die Daten liegen im privaten Repo emmas-app-daten; Zugriff über das Secret DATA_TOKEN.
 name: Erinnerungen
@@ -55,13 +56,19 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
         run: python3 daten/scripts/erinnerung.py
 
+      - name: Angebote von selbst aktualisieren (täglich Prospekte, montags Merkliste)
+        if: steps.check.outputs.ok == 'true'
+        env:
+          DATEN_ORDNER: daten
+        run: python3 daten/scripts/auftrag.py
+
       - name: Stand speichern
         if: steps.check.outputs.ok == 'true'
         working-directory: daten
         run: |
           git config user.name "Emmas Planner"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add push.json push-status.json 2>/dev/null || true
+          git add push.json push-status.json prospekte-auftrag.json merkliste.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "Nichts Neues"; exit 0; fi
           git commit -q -m "Benachrichtigungen: Stand"
           for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 3; done
