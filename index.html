@@ -558,7 +558,7 @@ nav.tabs{isolation:isolate}
 'use strict';
 /* ---------- Grundlagen ---------- */
 const VERSION='2.12';
-const BUILD='2026-11-18-1640'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
+const BUILD='2026-11-24-1615'; // bei jeder Änderung hochzählen, dann lädt die App die neue Version sofort
 const KEY='emmas-planner-v1';
 const DEFAULT_REPO='Larsen140/emmas-app-daten';
 const LAEDEN={aldi:['Aldi Süd','#2f62b3'],lidl:['Lidl','#e3a600'],hit:['HIT','#e05a2b'],edeka:['Edeka','#2b7f8f'],rewe:['REWE','#c41a2a'],dm:['dm','#7a52a8'],rossmann:['Rossmann','#c0306f'],orterer:['Orterer','#1f7a3d'],netto:['Netto','#f5c400']};
@@ -1853,7 +1853,7 @@ const KAT_GRUPPEN=[
   ['vorrat','Vorrat & Tiefkühl',/./]];
 function katGruppe(o){const k=norm(o.k||'');if(!k)return 'vorrat';for(const [id,,re] of KAT_GRUPPEN)if(re.test(k))return id;return 'vorrat'}
 function prospImg(o){return o.u?o.u:o.img?`https://mg2de.b-cdn.net/api/v1/offers/${o.i}/images/default/0/small.jpg`:''}
-function prospTitel(o){const n=o.n||'';return o.m&&!norm(n).includes(norm(o.m))?`${o.m} ${n}`:n}
+function prospTitel(o){const n=o.n||'';return o.m&&!/nobrand/i.test(o.m)&&!norm(n).includes(norm(o.m))?`${o.m} ${n}`:n}
 // passt ein Eintrag (z. B. "Milch") zu einem Prospekt-Angebot ("Weihenstephan Frische Vollmilch")?
 function wortListe(s){return norm(s).split(' ').filter(w=>w.length>1)}
 const KEIN_TREFFER=['leberkaese','fleischkaese','erdnussbutter','kokosmilch','sonnenmilch','koerpermilch','reinigungsmilch'];
@@ -1938,7 +1938,7 @@ function prospKarte(o,mk,l){
     <div class="pk-img">${o.bild?`<img data-bild="${esc(o.bild)}" alt="" decoding="async">`:img?`<img src="${img}" alt="" loading="lazy" decoding="async" onload="this.classList.add('da')" onerror="this.remove()">`:''}<span class="pk-ph">${katGruppe(o)==='getraenke'?'🍾':'🏷️'}</span>${off>0?`<span class="pk-off">−${off} %</span>`:''}<button class="pk-share" data-act="share-offer" data-l="${l}" data-i="${o.i}" aria-label="Angebot teilen">${ic('share')}</button></div>
     ${markHtml}
     ${appText(o)?`<div class="pk-app${!o.app?' online':appPflicht(o)?' muss':''}">${o.app?'📱':'🌐'} ${esc(appText(o))}</div>`:''}
-    <div class="pk-b">${o.m?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
+    <div class="pk-b">${o.m&&!/nobrand/i.test(o.m)?`<div class="pk-m">${esc(o.m)}</div>`:''}<div class="pk-n">${esc(o.n)}</div>${o.d&&o.d!=='Details im Prospekt'?`<div class="pk-d">${esc(o.d)}</div>`:''}</div>
     <div class="pk-f"><div class="pk-p">${o.p?`<b>${eur(o.p)}</b>`:`<b class="pk-r">${esc(o.r||'Angebot')}</b>`}${o.a&&o.a>o.p?`<s>${eur(o.a)}</s>`:''}${o.p&&o.g&&o.e&&Math.abs(o.g-o.p)>.005?`<small>${eur(o.g)}/${esc(o.e)}</small>`:''}</div>${btn}</div>
     ${wann||o.s?`<div class="pk-v">${esc([wann,o.s].filter(Boolean).join(' · '))}</div>`:''}
   </div>`;
